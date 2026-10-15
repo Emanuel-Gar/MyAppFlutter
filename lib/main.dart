@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'screens/login.dart'; // 1. Importa tu archivo de la pantalla
 
 void main() {
@@ -11,7 +12,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // Opcional: quita la etiqueta de "Debug"
+      debugShowCheckedModeBanner:
+          false, // Opcional: quita la etiqueta de "Debug"
       title: 'Mi Proyecto',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
