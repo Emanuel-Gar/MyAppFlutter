@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/login.dart'; // 1. Importa tu archivo de la pantalla
+import '../screens/login.dart'; // 1. Importa tu archivo de la pantalla
 
 void main() {
   runApp(const MyApp());
