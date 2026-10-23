@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'home_map_screen.dart';
+import 'dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -77,7 +79,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: "Correo o Número de teléfono",
-                    prefixIcon: const Icon(Icons.person_outline, color: primaryBlue),
+                    prefixIcon: const Icon(
+                      Icons.person_outline,
+                      color: primaryBlue,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -102,10 +107,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: "Contraseña",
-                    prefixIcon: const Icon(Icons.lock_outline, color: primaryBlue),
+                    prefixIcon: const Icon(
+                      Icons.lock_outline,
+                      color: primaryBlue,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: Colors.grey,
                       ),
                       onPressed: () {

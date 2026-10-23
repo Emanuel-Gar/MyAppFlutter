@@ -1,4 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
+
 import '../models/job_task.dart';
 import 'job_detail_screen.dart';
 
@@ -14,6 +20,13 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
   String _selectedLocation = "Tlaxcala y Puebla (Zona de prueba)";
   String _selectedCategory = "Todos";
 
+  final MapController _mapController = MapController();
+  LatLng? _currentLocation;
+  String _locationMessage = 'Buscando tu ubicación...';
+  bool _mapReady = false;
+  bool _hasCenteredOnLocation = false;
+  StreamSubscription<Position>? _positionSubscription;
+
   final List<String> _categories = [
     "Todos",
     "Ayudante general",
@@ -22,7 +35,7 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
     "Electricista",
     "Carpintero",
     "Limpieza",
-    "Ayuda rápida"
+    "Ayuda rápida",
   ];
 
   // Datos mock simulados del backend / base de datos geolocalizada
@@ -54,10 +67,96 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadCurrentLocation();
+  }
+
+  Future<void> _loadCurrentLocation() async {
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        _showLocationMessage('Activa los servicios de ubicación.');
+        return;
+      }
+      if (!mounted) return;
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (!mounted) return;
+
+      if (permission == LocationPermission.denied) {
+        _showLocationMessage('Permiso de ubicación denegado.');
+        return;
+      }
+      if (permission == LocationPermission.deniedForever) {
+        _showLocationMessage(
+          'Permiso denegado permanentemente. Actívalo en la configuración.',
+        );
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition();
+      if (!mounted) return;
+      _updateCurrentLocation(position);
+
+      _positionSubscription =
+          Geolocator.getPositionStream(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              distanceFilter: 10,
+            ),
+          ).listen(
+            _updateCurrentLocation,
+            onError: (Object error) {
+              debugPrint('Error actualizando la ubicación: $error');
+              _showLocationMessage('No se pudo actualizar la ubicación.');
+            },
+          );
+    } catch (error) {
+      debugPrint('Error obteniendo la ubicación: $error');
+      _showLocationMessage('No se pudo obtener tu ubicación.');
+    }
+  }
+
+  void _updateCurrentLocation(Position position) {
+    if (!mounted) return;
+    setState(() {
+      _currentLocation = LatLng(position.latitude, position.longitude);
+      _locationMessage = 'Tu ubicación actual';
+    });
+    _centerOnCurrentLocation();
+  }
+
+  void _showLocationMessage(String message) {
+    if (!mounted) return;
+    setState(() {
+      _locationMessage = message;
+    });
+  }
+
+  void _onMapReady() {
+    _mapReady = true;
+    _centerOnCurrentLocation();
+  }
+
+  void _centerOnCurrentLocation() {
+    if (_mapReady && !_hasCenteredOnLocation && _currentLocation != null) {
+      _mapController.move(_currentLocation!, 15);
+      _hasCenteredOnLocation = true;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Definición de colores según el documento (Azules base, Verde para éxito/botones, etc.)[cite: 2]
-    final primaryColor = _isDarkMode ? const Color(0xFF12202E) : const Color(0xFF1976D2);
-    final backgroundColor = _isDarkMode ? const Color(0xFF0C1620) : Colors.white;
+    final primaryColor = _isDarkMode
+        ? const Color(0xFF12202E)
+        : const Color(0xFF1976D2);
+    final backgroundColor = _isDarkMode
+        ? const Color(0xFF0C1620)
+        : Colors.white;
     final cardColor = _isDarkMode ? const Color(0xFF12202E) : Colors.white;
     final textColor = _isDarkMode ? Colors.white : Colors.black87;
 
@@ -78,7 +177,11 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.handshake, color: Colors.blue, size: 28),
+                          const Icon(
+                            Icons.handshake,
+                            color: Colors.blue,
+                            size: 28,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             "Te Ayudo",
@@ -91,8 +194,12 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                         ],
                       ),
                       IconButton(
-                        icon: Icon(_isDarkMode ? Icons.light_mode : Icons.dark_mode, color: textColor),
-                        onPressed: () => setState(() => _isDarkMode = !_isDarkMode),
+                        icon: Icon(
+                          _isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                          color: textColor,
+                        ),
+                        onPressed: () =>
+                            setState(() => _isDarkMode = !_isDarkMode),
                       ),
                     ],
                   ),
@@ -104,23 +211,40 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                       // TODO: Abrir selector o edición de ubicación
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: _isDarkMode ? Colors.white10 : Colors.grey.shade100,
+                        color: _isDarkMode
+                            ? Colors.white10
+                            : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.location_on, color: Colors.red, size: 20),
+                          const Icon(
+                            Icons.location_on,
+                            color: Colors.red,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _selectedLocation,
-                              style: TextStyle(color: textColor, fontSize: 13, fontWeight: FontWeight.w500),
+                              style: TextStyle(
+                                color: textColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 14,
+                            color: Colors.grey,
+                          ),
                         ],
                       ),
                     ),
@@ -134,11 +258,18 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                         child: TextField(
                           decoration: InputDecoration(
                             hintText: "¿En qué necesitas ayuda?",
-                            hintStyle: const TextStyle(fontSize: 14), 
-                            prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                            hintStyle: const TextStyle(fontSize: 14),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: Colors.grey,
+                            ),
                             filled: true,
-                            fillColor: _isDarkMode ? Colors.white10 : Colors.grey.shade100,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            fillColor: _isDarkMode
+                                ? Colors.white10
+                                : Colors.grey.shade100,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 0,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                               borderSide: BorderSide.none,
@@ -169,7 +300,10 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
               height: 50,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 itemCount: _categories.length,
                 itemBuilder: (context, index) {
                   final category = _categories[index];
@@ -198,46 +332,38 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  // Fondo de mapa ilustrado / estilo plano con grid
-                  Positioned.fill(
-                    child: Container(
-                      color: _isDarkMode ? const Color(0xFF090E14) : Colors.blue.shade50,
-                      child: Stack(
-                        children: [
-                          GridView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 6),
-                            itemBuilder: (context, index) => Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: const LatLng(19.31777, -98.23846),
+                      initialZoom: 13.0,
+                      onMapReady: _onMapReady,
+                    ),
+
+                    children: [
+                      // Capa del mapa de OpenStreetMap
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.tuempresa.app',
+                      ),
+
+                      MarkerLayer(
+                        markers: [
+                          if (_currentLocation != null)
+                            Marker(
+                              point: _currentLocation!,
+                              width: 40,
+                              height: 40,
+                              child: const Icon(
+                                Icons.my_location,
+                                color: Colors.blue,
+                                size: 40,
                               ),
                             ),
-                          ),
-                          // Marcador 1: Oficio (Azul)
-                          Positioned(
-                            top: 100,
-                            left: 80,
-                            child: _buildMapPin(
-                              context,
-                              title: "Plomería",
-                              color: Colors.blue,
-                              task: _tasks[0],
-                            ),
-                          ),
-                          // Marcador 2: Ayuda Rápida / Tarea simple (Naranja)
-                          Positioned(
-                            bottom: 150,
-                            right: 90,
-                            child: _buildMapPin(
-                              context,
-                              title: "Ayuda Rápida",
-                              color: Colors.orange,
-                              task: _tasks[1],
-                            ),
-                          ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
 
                   // Botón flotante para ver lista de resultados rápidos inferiores[cite: 2]
@@ -247,13 +373,20 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                     right: 20,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2E7D32), // Color verde para botones importantes[cite: 2]
+                        backgroundColor: const Color(
+                          0xFF2E7D32,
+                        ), // Color verde para botones importantes[cite: 2]
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       icon: const Icon(Icons.near_me),
-                      label: const Text("Ver solicitudes y oficios cercanos", style: TextStyle(fontSize: 16)),
+                      label: const Text(
+                        "Ver solicitudes y oficios cercanos",
+                        style: TextStyle(fontSize: 16),
+                      ),
                       onPressed: () => _showBottomSheetResults(context),
                     ),
                   ),
@@ -266,7 +399,12 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
     );
   }
 
-  Widget _buildMapPin(BuildContext context, {required String title, required Color color, required JobTask task}) {
+  Widget _buildMapPin(
+    BuildContext context, {
+    required String title,
+    required Color color,
+    required JobTask task,
+  }) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -281,9 +419,18 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(6),
-              boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
+              boxShadow: const [
+                BoxShadow(color: Colors.black26, blurRadius: 4),
+              ],
             ),
-            child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           const Icon(Icons.location_on, color: Colors.redAccent, size: 36),
         ],
@@ -307,10 +454,20 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
             const SizedBox(height: 12),
-            const Text("Trabajos y ayudas cercanas", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              "Trabajos y ayudas cercanas",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
             Expanded(
               child: ListView.builder(
@@ -321,24 +478,41 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                     margin: const EdgeInsets.only(bottom: 10),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: task.type == TaskType.oficio ? Colors.blue.shade100 : Colors.orange.shade100,
+                        backgroundColor: task.type == TaskType.oficio
+                            ? Colors.blue.shade100
+                            : Colors.orange.shade100,
                         child: Icon(
-                          task.type == TaskType.oficio ? Icons.build : Icons.task_alt,
-                          color: task.type == TaskType.oficio ? Colors.blue : Colors.orange,
+                          task.type == TaskType.oficio
+                              ? Icons.build
+                              : Icons.task_alt,
+                          color: task.type == TaskType.oficio
+                              ? Colors.blue
+                              : Colors.orange,
                         ),
                       ),
-                      title: Text(task.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text("${task.category} • ${task.distance}\n${task.schedule}"),
+                      title: Text(
+                        task.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        "${task.category} • ${task.distance}\n${task.schedule}",
+                      ),
                       isThreeLine: true,
                       trailing: Text(
                         "\$${task.payment.toStringAsFixed(0)} MXN",
-                        style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold, fontSize: 15),
+                        style: const TextStyle(
+                          color: Color(0xFF2E7D32),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
                       ),
                       onTap: () {
                         Navigator.pop(context); // Cierra bottom sheet
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => JobDetailScreen(task: task)),
+                          MaterialPageRoute(
+                            builder: (context) => JobDetailScreen(task: task),
+                          ),
                         );
                       },
                     ),
