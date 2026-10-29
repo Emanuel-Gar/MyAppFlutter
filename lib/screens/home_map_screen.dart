@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../models/job_task.dart';
+import '../widgets/te_ayudo_app_bar.dart';
 import 'job_detail_screen.dart';
 
 class HomeMapScreen extends StatefulWidget {
@@ -16,7 +17,6 @@ class HomeMapScreen extends StatefulWidget {
 }
 
 class _HomeMapScreenState extends State<HomeMapScreen> {
-  bool _isDarkMode = false;
   String _selectedLocation = "Tlaxcala y Puebla (Zona de prueba)";
   String _selectedCategory = "Todos";
 
@@ -150,18 +150,20 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     // Definición de colores según el documento (Azules base, Verde para éxito/botones, etc.)[cite: 2]
-    final primaryColor = _isDarkMode
+    final primaryColor = isDarkMode
         ? const Color(0xFF12202E)
         : const Color(0xFF1976D2);
-    final backgroundColor = _isDarkMode
+    final backgroundColor = isDarkMode
         ? const Color(0xFF0C1620)
         : Colors.white;
-    final cardColor = _isDarkMode ? const Color(0xFF12202E) : Colors.white;
-    final textColor = _isDarkMode ? Colors.white : Colors.black87;
+    final cardColor = isDarkMode ? const Color(0xFF12202E) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
 
     return Scaffold(
       backgroundColor: backgroundColor,
+      appBar: const TeAyudoAppBar(),
       body: SafeArea(
         child: Column(
           children: [
@@ -171,40 +173,6 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
               color: cardColor,
               child: Column(
                 children: [
-                  // Logo y Modo Oscuro/Claro[cite: 2]
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.handshake,
-                            color: Colors.blue,
-                            size: 28,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            "Te Ayudo",
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: textColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          _isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                          color: textColor,
-                        ),
-                        onPressed: () =>
-                            setState(() => _isDarkMode = !_isDarkMode),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
                   // Barra de Ubicación Actual editable[cite: 2]
                   InkWell(
                     onTap: () {
@@ -216,7 +184,7 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: _isDarkMode
+                        color: isDarkMode
                             ? Colors.white10
                             : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(8),
@@ -264,7 +232,7 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                               color: Colors.grey,
                             ),
                             filled: true,
-                            fillColor: _isDarkMode
+                            fillColor: isDarkMode
                                 ? Colors.white10
                                 : Colors.grey.shade100,
                             contentPadding: const EdgeInsets.symmetric(
@@ -445,8 +413,8 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.5,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.all(16),

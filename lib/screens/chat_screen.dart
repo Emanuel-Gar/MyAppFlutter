@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../models/chat_message.dart';
+import '../widgets/te_ayudo_app_bar.dart';
 
 class ChatScreen extends StatefulWidget {
   final String recipientName;
@@ -17,12 +19,24 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  
+
   // Lista inicial de mensajes simulados para la conversación
   final List<ChatMessage> _messages = [
-    ChatMessage(text: "¡Hola! Vi que aceptaste mi solicitud de ayuda.", isMe: false, time: "15:10"),
-    ChatMessage(text: "Hola, así es. ¿En qué dirección exacta nos vemos?", isMe: true, time: "15:11"),
-    ChatMessage(text: "Es en la calle principal #12, cerca de la plaza.", isMe: false, time: "15:12"),
+    ChatMessage(
+      text: "¡Hola! Vi que aceptaste mi solicitud de ayuda.",
+      isMe: false,
+      time: "15:10",
+    ),
+    ChatMessage(
+      text: "Hola, así es. ¿En qué dirección exacta nos vemos?",
+      isMe: true,
+      time: "15:11",
+    ),
+    ChatMessage(
+      text: "Es en la calle principal #12, cerca de la plaza.",
+      isMe: false,
+      time: "15:12",
+    ),
   ];
 
   void _sendMessage() {
@@ -58,10 +72,12 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF1976D2);
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: primaryBlue,
+        backgroundColor: isDarkMode ? const Color(0xFF12202E) : primaryBlue,
         foregroundColor: Colors.white,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,11 +90,14 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         actions: [
+          const ThemeToggleButton(),
           IconButton(
             icon: const Icon(Icons.phone),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Llamada interna protegida simulada")),
+                const SnackBar(
+                  content: Text("Llamada interna protegida simulada"),
+                ),
               );
             },
           ),
@@ -89,7 +108,7 @@ class _ChatScreenState extends State<ChatScreen> {
           // Aviso de seguridad del chat interno y retención escrow
           Container(
             padding: const EdgeInsets.all(8),
-            color: Colors.blue.shade50,
+            color: isDarkMode ? const Color(0xFF12202E) : Colors.blue.shade50,
             child: Row(
               children: const [
                 Icon(Icons.security, size: 16, color: primaryBlue),
@@ -112,13 +131,22 @@ class _ChatScreenState extends State<ChatScreen> {
               itemBuilder: (context, index) {
                 final msg = _messages[index];
                 return Align(
-                  alignment: msg.isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment: msg.isMe
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.75,
+                    ),
                     decoration: BoxDecoration(
-                      color: msg.isMe ? primaryBlue : Colors.grey.shade200,
+                      color: msg.isMe
+                          ? primaryBlue
+                          : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
@@ -127,7 +155,9 @@ class _ChatScreenState extends State<ChatScreen> {
                         Text(
                           msg.text,
                           style: TextStyle(
-                            color: msg.isMe ? Colors.white : Colors.black87,
+                            color: msg.isMe
+                                ? Colors.white
+                                : colorScheme.onSurface,
                             fontSize: 14,
                           ),
                         ),
@@ -135,7 +165,9 @@ class _ChatScreenState extends State<ChatScreen> {
                         Text(
                           msg.time,
                           style: TextStyle(
-                            color: msg.isMe ? Colors.white70 : Colors.black54,
+                            color: msg.isMe
+                                ? Colors.white70
+                                : colorScheme.onSurfaceVariant,
                             fontSize: 10,
                           ),
                         ),
@@ -150,11 +182,14 @@ class _ChatScreenState extends State<ChatScreen> {
           // Barra inferior para escribir mensajes
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            color: Colors.white,
+            color: colorScheme.surface,
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.add_circle_outline, color: primaryBlue),
+                  icon: const Icon(
+                    Icons.add_circle_outline,
+                    color: primaryBlue,
+                  ),
                   onPressed: () {},
                 ),
                 Expanded(
@@ -163,8 +198,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     decoration: InputDecoration(
                       hintText: "Escribe un mensaje...",
                       filled: true,
-                      fillColor: Colors.grey.shade100,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      fillColor: colorScheme.surfaceContainerHighest,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
@@ -174,7 +212,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(width: 8),
                 CircleAvatar(
-                  backgroundColor: const Color(0xFF2E7D32), // Botón verde de acción
+                  backgroundColor: const Color(
+                    0xFF2E7D32,
+                  ), // Botón verde de acción
                   child: IconButton(
                     icon: const Icon(Icons.send, color: Colors.white, size: 18),
                     onPressed: _sendMessage,

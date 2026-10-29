@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../screens/login.dart'; // 1. Importa tu archivo de la pantalla
+
+import 'screens/login.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,15 +12,33 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner:
-          false, // Opcional: quita la etiqueta de "Debug"
-      title: 'Mi Proyecto',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const LoginScreen(), // 2. Declara tu LoginScreen como la pantalla inicial
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: appThemeMode,
+      builder: (context, themeMode, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Mi Proyecto',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF1976D2),
+              surface: const Color(0xFFF8FAFC),
+            ),
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF1976D2),
+              brightness: Brightness.dark,
+              surface: const Color(0xFF0C1620),
+            ),
+            scaffoldBackgroundColor: const Color(0xFF0C1620),
+            cardColor: const Color(0xFF12202E),
+            useMaterial3: true,
+          ),
+          themeMode: themeMode,
+          home: const LoginScreen(),
+        );
+      },
     );
   }
 }

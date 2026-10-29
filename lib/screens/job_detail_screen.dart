@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../models/job_task.dart';
+import '../widgets/te_ayudo_app_bar.dart';
 import 'chat_screen.dart';
 
 class JobDetailScreen extends StatelessWidget {
@@ -9,11 +11,16 @@ class JobDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(task.category),
-        backgroundColor: Colors.blue,
+        backgroundColor: isDarkMode
+            ? const Color(0xFF12202E)
+            : Colors.blue,
         foregroundColor: Colors.white,
+        actions: const [ThemeToggleButton()],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -47,7 +54,14 @@ class JobDetailScreen extends StatelessWidget {
             // En qué consiste (Descripción)
             const Text("Descripción de la tarea", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            Text(task.description, style: const TextStyle(fontSize: 15, color: Colors.black87, height: 1.4)),
+            Text(
+              task.description,
+              style: TextStyle(
+                fontSize: 15,
+                color: Theme.of(context).colorScheme.onSurface,
+                height: 1.4,
+              ),
+            ),
             const SizedBox(height: 20),
 
             // Horario / Duración estimada

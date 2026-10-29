@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'home_map_screen.dart';
 import 'dashboard.dart';
+import 'register_screen.dart';
+import '../widgets/te_ayudo_app_bar.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,9 +22,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF1976D2);
     const actionGreen = Color(0xFF2E7D32);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
@@ -31,7 +34,11 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 20),
+                  const Align(
+                    alignment: Alignment.centerRight,
+                    child: ThemeToggleButton(),
+                  ),
+                  const SizedBox(height: 20),
                 // Logo e Identidad Te Ayudo
                 Center(
                   child: Column(
@@ -195,6 +202,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
+                        );
                         // Flujo de Registro / Verificación INE/RFC
                       },
                       child: const Text(

@@ -5,6 +5,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../widgets/te_ayudo_app_bar.dart';
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -112,17 +114,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     const primaryBlue = Color(0xFF1976D2);
     const actionGreen = Color(0xFF2E7D32);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: isDarkMode
+          ? const Color(0xFF0C1620)
+          : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text(
           "Mi Panel",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: primaryBlue,
+        backgroundColor: isDarkMode ? const Color(0xFF12202E) : primaryBlue,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: const [ThemeToggleButton()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -328,7 +334,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
