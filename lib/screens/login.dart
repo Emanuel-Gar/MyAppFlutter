@@ -4,6 +4,7 @@ import 'home_map_screen.dart';
 import 'dashboard.dart';
 import 'register_screen.dart';
 import '../widgets/te_ayudo_app_bar.dart';
+import '../services/login_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,7 +17,72 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  final _loginService = LoginService();
+
   bool _obscurePassword = true;
+
+  bool _loggedIn = false;
+
+  Future<void> _loggear() async {
+    FocusScope.of(context).unfocus();
+
+    if (_loggedIn) return;
+
+    setState(() {
+      _loggedIn = true;
+    });
+
+    try {
+      final respuesta = await _loginService.loginUser(
+        correoElectronico: _emailController.text.trim(),
+        contrasena: _passwordController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      if (respuesta['success'] == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeMapScreen()),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              respuesta['message'] ??
+                  respuesta['mensaje'] ??
+                  'Inicio de sesion realizado correctamente',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Manejar el caso de error, por ejemplo, mostrar un mensaje de error
+        _formKey.currentState!.reset();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(respuesta['message'] ?? 'Error desconocido'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo completar el inicio de sesion: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loggedIn = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,11 +100,11 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                  const Align(
-                    alignment: Alignment.centerRight,
-                    child: ThemeToggleButton(),
-                  ),
-                  const SizedBox(height: 20),
+                const Align(
+                  alignment: Alignment.centerRight,
+                  child: ThemeToggleButton(),
+                ),
+                const SizedBox(height: 20),
                 // Logo e Identidad Te Ayudo
                 Center(
                   child: Column(
@@ -140,6 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   validator: (value) {
+                    //logica con el back ends
                     if (value == null || value.isEmpty) {
                       return "Ingresa tu contraseña";
                     }
@@ -176,12 +243,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       // Navegar al mapa principal
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomeMapScreen(),
-                        ),
-                      );
+                      /////
+                      if (_loggedIn) return;
+                      _loggear();
                     }
                   },
                   child: const Text(
@@ -202,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const RegisterScreen(),

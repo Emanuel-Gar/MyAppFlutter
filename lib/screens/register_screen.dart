@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../widgets/te_ayudo_app_bar.dart';
 import '../services/register_service.dart';
+import './login.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -19,7 +20,13 @@ class _RegisterScreen extends State<RegisterScreen> {
   final _nombreController = TextEditingController();
   final _apellidoPaternoController = TextEditingController();
   final _apellidoMaternoController = TextEditingController();
+  final _correoController = TextEditingController();
+  final _contrasenaController = TextEditingController();
+  final _confirmarContrasenaController = TextEditingController();
   final RegistroService _registroService = RegistroService();
+
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   DateTime? _fechaNacimiento;
 
@@ -35,6 +42,9 @@ class _RegisterScreen extends State<RegisterScreen> {
     _nombreController.dispose();
     _apellidoPaternoController.dispose();
     _apellidoMaternoController.dispose();
+    _correoController.dispose();
+    _contrasenaController.dispose();
+    _confirmarContrasenaController.dispose();
 
     super.dispose();
   }
@@ -115,6 +125,45 @@ class _RegisterScreen extends State<RegisterScreen> {
     return null;
   }
 
+  String? _validarCorreo(String? valor) {
+    if (valor == null || valor.trim().isEmpty) {
+      return 'Ingresa tu correo electrónico';
+    }
+
+    final correo = valor.trim();
+    final regex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+    if (!regex.hasMatch(correo)) {
+      return 'Ingresa un correo electrónico válido';
+    }
+
+    return null;
+  }
+
+  String? _validarContrasena(String? valor) {
+    if (valor == null || valor.isEmpty) {
+      return 'Ingresa una contraseña';
+    }
+
+    if (valor.length < 8) {
+      return 'La contraseña debe tener al menos 8 caracteres';
+    }
+
+    return null;
+  }
+
+  String? _validarConfirmacionContrasena(String? valor) {
+    if (valor == null || valor.isEmpty) {
+      return 'Confirma tu contraseña';
+    }
+
+    if (valor != _contrasenaController.text) {
+      return 'Las contraseñas no coinciden';
+    }
+
+    return null;
+  }
+
   Future<void> _registrar() async {
     FocusScope.of(context).unfocus();
 
@@ -149,10 +198,24 @@ class _RegisterScreen extends State<RegisterScreen> {
         apellidoMaterno: _apellidoMaternoController.text.trim().isEmpty
             ? null
             : _apellidoMaternoController.text.trim(),
+        correoElectronico: _correoController.text.trim(),
+        contrasena: _contrasenaController.text,
         tipoUsuario: _tipoUsuario,
       );
 
       if (!mounted) return;
+
+      if (respuesta['success'] != true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              respuesta['message'] ?? 'No se pudo registrar el usuario',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -163,6 +226,11 @@ class _RegisterScreen extends State<RegisterScreen> {
           ),
           backgroundColor: Colors.green,
         ),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
 
       // Aquí puedes navegar a otra pantalla si lo necesitas.
@@ -387,6 +455,82 @@ class _RegisterScreen extends State<RegisterScreen> {
                               ),
                             );
                           },
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        TextFormField(
+                          controller: _correoController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          autofillHints: const [AutofillHints.email],
+                          decoration: const InputDecoration(
+                            labelText: 'Correo electrónico',
+                            prefixIcon: Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: _validarCorreo,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        TextFormField(
+                          controller: _contrasenaController,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.next,
+                          autofillHints: const [AutofillHints.newPassword],
+                          decoration: InputDecoration(
+                            labelText: 'Contraseña',
+                            prefixIcon: const Icon(
+                              Icons.lock_outline,
+                              color: Color(0xFF1976D2),
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: _validarContrasena,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        TextFormField(
+                          controller: _confirmarContrasenaController,
+                          obscureText: _obscureConfirmPassword,
+                          textInputAction: TextInputAction.done,
+                          autofillHints: const [AutofillHints.newPassword],
+                          decoration: InputDecoration(
+                            labelText: 'Confirmar contraseña',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureConfirmPassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscureConfirmPassword =
+                                      !_obscureConfirmPassword;
+                                });
+                              },
+                            ),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: _validarConfirmacionContrasena,
                         ),
 
                         const SizedBox(height: 28),
