@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'home_map_screen.dart';
 import 'dashboard.dart';
+import 'dashboard_admin.dart'; // 1. Importamos tu nuevo dashboard de administración
 import 'register_screen.dart';
 import '../widgets/te_ayudo_app_bar.dart';
 import '../services/login_service.dart';
@@ -112,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: primaryBlue.withOpacity(0.1),
+                          color: primaryBlue.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -206,7 +207,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   validator: (value) {
-                    //logica con el back ends
                     if (value == null || value.isEmpty) {
                       return "Ingresa tu contraseña";
                     }
@@ -242,8 +242,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      // Navegar al mapa principal
-                      /////
                       if (_loggedIn) return;
                       _loggear();
                     }
@@ -251,6 +249,35 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text(
                     "Iniciar Sesión",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // 2. BOTÓN NUEVO: Acceso directo al Dashboard de Administrador
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: primaryBlue,
+                    side: const BorderSide(color: primaryBlue, width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        // Asegúrate de usar el nombre de la clase que pusiste en 'dashboard_admin.dart'
+                        // (Si la clase se llama DashboardAdminScreen o DashboardScreen, ponla aquí)
+                        builder: (context) => const DashboardAdminScreen(), 
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.admin_panel_settings_rounded),
+                  label: const Text(
+                    "Panel de Administrador (Demo)",
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),
 
@@ -272,7 +299,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             builder: (context) => const RegisterScreen(),
                           ),
                         );
-                        // Flujo de Registro / Verificación INE/RFC
                       },
                       child: const Text(
                         "Regístrate",
