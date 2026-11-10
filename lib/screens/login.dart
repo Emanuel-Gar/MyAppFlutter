@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'home_map_screen.dart';
 import 'dashboard.dart';
 import 'dashboard_admin.dart'; // 1. Importamos tu nuevo dashboard de administración
+import 'dashboard_contratante.dart'; // 1. Importamos tu nuevo dashboard de contratante
 import 'register_screen.dart';
 import '../widgets/te_ayudo_app_bar.dart';
 import '../services/login_service.dart';
@@ -43,10 +44,24 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (respuesta['success'] == true) {
+        // 1. Extraemos el tipo de usuario que viene en la respuesta del servicio
+        final String? tipoUsuario = respuesta['tipoUsuario'];
+
+        // 2. Definimos la pantalla de destino según el rol
+        Widget pantallaDestino = const HomeMapScreen(); // Vista por defecto (ej. trabajador)
+
+        if (tipoUsuario == 'contratante') {
+          pantallaDestino = const ContratanteScreen(); // Tu vista para contratantes
+        } else if (tipoUsuario == 'trabajador') {
+          pantallaDestino = const HomeMapScreen(); // Tu vista para trabajadores
+        }
+
+        // 3. Navegamos a la pantalla correspondiente
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeMapScreen()),
+          MaterialPageRoute(builder: (context) => pantallaDestino),
         );
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(

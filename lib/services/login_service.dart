@@ -32,7 +32,7 @@ class LoginService {
       _userLog = Map<String, dynamic>.from(usuarioEncontrado)
         ..remove('contrasena');
       print('Usuario logueado: $_userLog');
-      return {'success': true, 'message': 'Login exitoso'};
+      return {'success': true, 'message': 'Login exitoso', 'tipoUsuario': _userLog!['tipoUsuario']};
     }
 
     return {
