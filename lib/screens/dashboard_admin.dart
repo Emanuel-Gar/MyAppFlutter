@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart'; // Importamos el paquete de gráficas
+import 'package:fl_chart/fl_chart.dart';
+import '../widgets/te_ayudo_app_bar.dart';
 
 class DashboardAdminScreen extends StatefulWidget {
   const DashboardAdminScreen({super.key});
@@ -13,35 +14,57 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    const primaryBlue = Color(0xFF1976D2); // El azul principal de tu login
+    final theme = Theme.of(context);
+    final primaryColor = primaryBlue; // Forzamos el color corporativo
+    
+    // Detectamos si el modo oscuro está activo
+    final isDarkMode = theme.brightness == Brightness.dark;
 
+    // 1. Declaración de colores dinámicos
+    final backgroundColor = isDarkMode ? const Color(0xFF121212) : Colors.grey[100]!;
+    final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : (Colors.grey[800] ?? Colors.black);
+    final subtitleColor = isDarkMode ? (Colors.grey[400] ?? Colors.grey) : (Colors.grey[600] ?? Colors.grey);
+    
+    // AppBar con el azul institucional en modo claro para darle vida, y oscuro elegante en dark mode
+    final appBarColor = isDarkMode ? const Color(0xFF1E1E1E) : primaryBlue;
+    final appBarTextAndIconColor = Colors.white;
+
+    // 2. Creación de la lista de páginas
     final List<Widget> pages = [
-      _buildClientManagementTab(primaryColor), // Clientes
-      _buildWorkersTab(primaryColor),          // Trabajadores
-      _buildFinanceTab(primaryColor),          // Finanzas
-      _buildReportsTab(primaryColor),          // Reportes con Gráficas Reales
+      _buildClientManagementTab(primaryColor, cardColor, textColor, subtitleColor),
+      _buildWorkersTab(primaryColor, cardColor, textColor, subtitleColor),
+      _buildFinanceTab(primaryColor, cardColor, textColor, subtitleColor),
+      _buildReportsTab(primaryColor, cardColor, textColor, subtitleColor),
     ];
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Panel Administrativo',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: appBarTextAndIconColor),
         ),
         centerTitle: false,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        foregroundColor: Colors.grey[800],
+        backgroundColor: appBarColor,
+        elevation: 2, // Ligera elevación para darle profundidad
+        iconTheme: IconThemeData(color: appBarTextAndIconColor),
         actions: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: ThemeToggleButton(),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
-              backgroundColor: primaryColor.withValues(alpha: 0.1),
-              child: Text(
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              child: const Text(
                 'Admin',
                 style: TextStyle(
-                  color: primaryColor,
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -61,8 +84,9 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
           });
         },
         type: BottomNavigationBarType.fixed,
+        backgroundColor: cardColor,
         selectedItemColor: primaryColor,
-        unselectedItemColor: Colors.grey,
+        unselectedItemColor: isDarkMode ? Colors.grey[500] : Colors.grey,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.people_rounded),
@@ -86,41 +110,44 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
   }
 
   // --- SECCIÓN 1: CLIENTES ---
-  Widget _buildClientManagementTab(Color primaryColor) {
+  Widget _buildClientManagementTab(Color primaryColor, Color cardColor, Color textColor, Color subtitleColor) {
     return ListView(
       padding: const EdgeInsets.all(20.0),
       children: [
-        _buildSectionHeader('Gestión de Clientes', 'Administra el estado de los usuarios'),
+        _buildSectionHeader('Gestión de Clientes', 'Administra el estado de los usuarios', textColor, subtitleColor),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _buildStatCard('Usuarios Activos', '1,420', Icons.check_circle_outline, Colors.green)),
+            Expanded(child: _buildStatCard('Usuarios Activos', '1,420', Icons.check_circle_outline, Colors.green, cardColor, textColor, subtitleColor)),
             const SizedBox(width: 16),
-            Expanded(child: _buildStatCard('Bloqueados', '35', Icons.block_rounded, Colors.red)),
+            Expanded(child: _buildStatCard('Bloqueados', '35', Icons.block_rounded, Colors.red, cardColor, textColor, subtitleColor)),
           ],
         ),
         const SizedBox(height: 24),
-        const Text('Listado de Clientes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text('Listado de Clientes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
         const SizedBox(height: 12),
-        _buildClientTile(name: 'Carlos Mendoza', email: 'carlos@email.com', isActive: true),
-        _buildClientTile(name: 'Ana Sofía Ruiz', email: 'ana.ruiz@email.com', isActive: false),
-        _buildClientTile(name: 'Jorge Luis Pérez', email: 'jorge@email.com', isActive: true),
+        _buildClientTile(name: 'Carlos Mendoza', email: 'carlos@email.com', isActive: true, cardColor: cardColor, textColor: textColor, subtitleColor: subtitleColor),
+        _buildClientTile(name: 'Ana Sofía Ruiz', email: 'ana.ruiz@email.com', isActive: false, cardColor: cardColor, textColor: textColor, subtitleColor: subtitleColor),
+        _buildClientTile(name: 'Jorge Luis Pérez', email: 'jorge@email.com', isActive: true, cardColor: cardColor, textColor: textColor, subtitleColor: subtitleColor),
       ],
     );
   }
 
   // --- SECCIÓN 2: TRABAJADORES ---
-  Widget _buildWorkersTab(Color primaryColor) {
+  Widget _buildWorkersTab(Color primaryColor, Color cardColor, Color textColor, Color subtitleColor) {
     return ListView(
       padding: const EdgeInsets.all(20.0),
       children: [
-        _buildSectionHeader('Control de Trabajadores', 'Revisa documentación y desempeño'),
+        _buildSectionHeader('Control de Trabajadores', 'Revisa documentación y desempeño', textColor, subtitleColor),
         const SizedBox(height: 16),
         _buildActionCard(
           icon: Icons.folder_shared_rounded,
           title: 'Documentación Pendiente',
           subtitle: '4 trabajadores requieren revisión de documentos',
           color: Colors.orange,
+          cardColor: cardColor,
+          textColor: textColor,
+          subtitleColor: subtitleColor,
           onTap: () {},
         ),
         const SizedBox(height: 12),
@@ -128,7 +155,10 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
           icon: Icons.work_history_rounded,
           title: 'Servicios Realizados',
           subtitle: 'Historial completo de trabajos por técnico',
-          color: Colors.blue,
+          color: primaryColor, // Usamos el azul corporativo
+          cardColor: cardColor,
+          textColor: textColor,
+          subtitleColor: subtitleColor,
           onTap: () {},
         ),
       ],
@@ -136,45 +166,45 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
   }
 
   // --- SECCIÓN 3: FINANZAS ---
-  Widget _buildFinanceTab(Color primaryColor) {
+  Widget _buildFinanceTab(Color primaryColor, Color cardColor, Color textColor, Color subtitleColor) {
     return ListView(
       padding: const EdgeInsets.all(20.0),
       children: [
-        _buildSectionHeader('Resumen Financiero', 'Control de ingresos y comisiones'),
+        _buildSectionHeader('Resumen Financiero', 'Control de ingresos y comisiones', textColor, subtitleColor),
         const SizedBox(height: 16),
         _buildFinanceCard('Ganancias Mensuales (Netas)', '\$24,500.00 MXN', primaryColor),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _buildStatCard('Comisiones', '\$6,120.00', Icons.pie_chart, Colors.purple)),
+            Expanded(child: _buildStatCard('Comisiones', '\$6,120.00', Icons.pie_chart, primaryColor, cardColor, textColor, subtitleColor)),
             const SizedBox(width: 16),
-            Expanded(child: _buildStatCard('Pagos Realizados', '\$18,380.00', Icons.payments, Colors.teal)),
+            Expanded(child: _buildStatCard('Pagos Realizados', '\$18,380.00', Icons.payments, Colors.teal, cardColor, textColor, subtitleColor)),
           ],
         ),
       ],
     );
   }
 
-  // --- SECCIÓN 4: REPORTES CON GRÁFICAS REALES ---
-  Widget _buildReportsTab(Color primaryColor) {
+  // --- SECCIÓN 4: REPORTES ---
+  Widget _buildReportsTab(Color primaryColor, Color cardColor, Color textColor, Color subtitleColor) {
     return ListView(
       padding: const EdgeInsets.all(20.0),
       children: [
-        _buildSectionHeader('Reportes y Estadísticas', 'Métricas gráficas de la plataforma'),
+        _buildSectionHeader('Reportes y Estadísticas', 'Métricas gráficas de la plataforma', textColor, subtitleColor),
         const SizedBox(height: 16),
 
-        // 1. Gráfica de Barras: Trabajos Realizados por Día / Semana
+        // Gráfica de Barras
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Trabajos Realizados (Semana)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('Trabajos Realizados (Semana)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
               const SizedBox(height: 24),
               SizedBox(
                 height: 200,
@@ -191,7 +221,7 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
                           getTitlesWidget: (value, meta) {
                             const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
                             if (value.toInt() >= 0 && value.toInt() < days.length) {
-                              return Text(days[value.toInt()], style: const TextStyle(fontSize: 11, color: Colors.grey));
+                              return Text(days[value.toInt()], style: TextStyle(fontSize: 11, color: subtitleColor));
                             }
                             return const Text('');
                           },
@@ -221,18 +251,18 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
 
         const SizedBox(height: 24),
 
-        // 2. Gráfica de Líneas: Crecimiento de Comisiones Generadas
+        // Gráfica de Líneas
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Comisiones Generadas (Últimos Meses)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('Comisiones Generadas (Últimos Meses)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor)),
               const SizedBox(height: 24),
               SizedBox(
                 height: 180,
@@ -246,7 +276,7 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
                           getTitlesWidget: (value, meta) {
                             const months = ['May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct'];
                             if (value.toInt() >= 0 && value.toInt() < months.length) {
-                              return Text(months[value.toInt()], style: const TextStyle(fontSize: 11, color: Colors.grey));
+                              return Text(months[value.toInt()], style: TextStyle(fontSize: 11, color: subtitleColor));
                             }
                             return const Text('');
                           },
@@ -260,12 +290,12 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
                     lineBarsData: [
                       LineChartBarData(
                         isCurved: true,
-                        color: Colors.green,
+                        color: primaryColor, // Usamos el azul corporativo aquí también
                         barWidth: 3,
                         dotData: const FlDotData(show: true),
                         belowBarData: BarAreaData(
                           show: true,
-                          color: Colors.green.withValues(alpha: 0.1),
+                          color: primaryColor.withValues(alpha: 0.1),
                         ),
                         spots: const [
                           FlSpot(0, 3),
@@ -287,7 +317,6 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
     );
   }
 
-  // Método auxiliar para generar barras limpias
   BarChartGroupData _makeBarGroup(int x, double y, Color color) {
     return BarChartGroupData(
       x: x,
@@ -304,22 +333,22 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
 
   // --- WIDGETS AUXILIARES ---
 
-  Widget _buildSectionHeader(String title, String subtitle) {
+  Widget _buildSectionHeader(String title, String subtitle, Color textColor, Color subtitleColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: textColor)),
         const SizedBox(height: 4),
-        Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+        Text(subtitle, style: TextStyle(color: subtitleColor, fontSize: 13)),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color color, Color cardColor, Color textColor, Color subtitleColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
@@ -328,36 +357,36 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
         children: [
           Icon(icon, color: color, size: 24),
           const SizedBox(height: 12),
-          Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+          Text(title, style: TextStyle(color: subtitleColor, fontSize: 12)),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
         ],
       ),
     );
   }
 
-  Widget _buildClientTile({required String name, required String email, required bool isActive}) {
+  Widget _buildClientTile({required String name, required String email, required bool isActive, required Color cardColor, required Color textColor, required Color subtitleColor}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: Colors.grey[200],
-            child: Text(name[0], style: const TextStyle(fontWeight: FontWeight.bold)),
+            backgroundColor: Colors.grey.withValues(alpha: 0.2),
+            child: Text(name[0], style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                Text(email, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                Text(name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor)),
+                Text(email, style: TextStyle(color: subtitleColor, fontSize: 12)),
               ],
             ),
           ),
@@ -384,14 +413,14 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
     );
   }
 
-  Widget _buildActionCard({required IconData icon, required String title, required String subtitle, required Color color, required VoidCallback onTap}) {
+  Widget _buildActionCard({required IconData icon, required String title, required String subtitle, required Color color, required Color cardColor, required Color textColor, required Color subtitleColor, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
         ),
@@ -407,13 +436,13 @@ class _DashboardAdminScreenState extends State<DashboardAdminScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: textColor)),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                  Text(subtitle, style: TextStyle(color: subtitleColor, fontSize: 13)),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: subtitleColor),
           ],
         ),
       ),
