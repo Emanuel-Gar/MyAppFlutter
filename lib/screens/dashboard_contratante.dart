@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
+import '../services/publicjob_service.dart';
+import 'public_job_screen.dart';
 import '../widgets/te_ayudo_app_bar.dart';
 
 class ContratanteScreen extends StatefulWidget {
@@ -12,10 +17,21 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
   // Controla qué sección se muestra en el cuerpo principal
   String _currentSection = 'inicio';
 
-  // Controladores simulados para el formulario de publicar trabajo
-  final _tituloController = TextEditingController();
-  final _descripcionController = TextEditingController();
-  final _pagoController = TextEditingController();
+  Future<void> _openPublicJobScreen() async {
+    final published = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const PublicJobScreen()),
+    );
+    if (!mounted || published != true) return;
+
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('¡Trabajo publicado con éxito!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +40,13 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     // Colores dinámicos adaptados a modo claro/oscuro
-    final backgroundColor = isDarkMode ? const Color(0xFF121212) : Colors.grey[100]!;
+    final backgroundColor = isDarkMode
+        ? const Color(0xFF121212)
+        : Colors.grey[100]!;
     final cardColor = isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.grey[800]!;
     final subtitleColor = isDarkMode ? Colors.grey[400]! : Colors.grey[600]!;
-    
+
     final appBarColor = isDarkMode ? const Color(0xFF1E1E1E) : primaryBlue;
 
     return Scaffold(
@@ -36,7 +54,10 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
       appBar: AppBar(
         title: Text(
           _getSectionTitle(),
-          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         backgroundColor: appBarColor,
         elevation: 2,
@@ -54,7 +75,11 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
               backgroundColor: Colors.white.withValues(alpha: 0.2),
               child: const Text(
                 'CC', // Contratante Cliente
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
@@ -67,9 +92,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: primaryBlue,
-              ),
+              decoration: BoxDecoration(color: primaryBlue),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -82,7 +105,11 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
                   const SizedBox(height: 10),
                   Text(
                     'Panel de Contratante',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
                     'contratante@teayudo.com',
@@ -93,23 +120,35 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
             ),
             ListTile(
               leading: Icon(Icons.dashboard_rounded, color: primaryBlue),
-              title: Text('Panel Principal', style: TextStyle(color: textColor)),
+              title: Text(
+                'Panel Principal',
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 setState(() => _currentSection = 'inicio');
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              leading: Icon(Icons.add_circle_outline_rounded, color: primaryBlue),
-              title: Text('Publicar un trabajo', style: TextStyle(color: textColor)),
+              leading: Icon(
+                Icons.add_circle_outline_rounded,
+                color: primaryBlue,
+              ),
+              title: Text(
+                'Publicar un trabajo',
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
-                setState(() => _currentSection = 'publicar');
                 Navigator.pop(context);
+                _openPublicJobScreen();
               },
             ),
             ListTile(
               leading: Icon(Icons.payments_rounded, color: primaryBlue),
-              title: Text('Pago al trabajador', style: TextStyle(color: textColor)),
+              title: Text(
+                'Pago al trabajador',
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 setState(() => _currentSection = 'pagos');
                 Navigator.pop(context);
@@ -117,7 +156,10 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
             ),
             ListTile(
               leading: Icon(Icons.star_rate_rounded, color: primaryBlue),
-              title: Text('Calificación de servicios', style: TextStyle(color: textColor)),
+              title: Text(
+                'Calificación de servicios',
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 setState(() => _currentSection = 'calificaciones');
                 Navigator.pop(context);
@@ -126,13 +168,35 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
             const Divider(),
             // --- MENÚ DESPLEGABLE PARA SIMULAR NOTIFICACIONES PUSH ---
             ExpansionTile(
-              leading: const Icon(Icons.notifications_active_rounded, color: Colors.orange),
-              title: Text('Simular Notificaciones', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+              leading: const Icon(
+                Icons.notifications_active_rounded,
+                color: Colors.orange,
+              ),
+              title: Text(
+                'Simular Notificaciones',
+                style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+              ),
               children: [
-                _buildNotificationSubItem('Nuevo trabajo encontrado', 'Un trabajador aceptó postularse.', context),
-                _buildNotificationSubItem('Trabajo aceptado', 'El microturno ha comenzado en ruta.', context),
-                _buildNotificationSubItem('Trabajo finalizado', 'El servicio concluyó con éxito.', context),
-                _buildNotificationSubItem('Pago realizado', 'La transferencia SPEI fue exitosa.', context),
+                _buildNotificationSubItem(
+                  'Nuevo trabajo encontrado',
+                  'Un trabajador aceptó postularse.',
+                  context,
+                ),
+                _buildNotificationSubItem(
+                  'Trabajo aceptado',
+                  'El microturno ha comenzado en ruta.',
+                  context,
+                ),
+                _buildNotificationSubItem(
+                  'Trabajo finalizado',
+                  'El servicio concluyó con éxito.',
+                  context,
+                ),
+                _buildNotificationSubItem(
+                  'Pago realizado',
+                  'La transferencia SPEI fue exitosa.',
+                  context,
+                ),
               ],
             ),
           ],
@@ -142,7 +206,12 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: _buildBodyContent(primaryBlue, cardColor, textColor, subtitleColor),
+          child: _buildBodyContent(
+            primaryBlue,
+            cardColor,
+            textColor,
+            subtitleColor,
+          ),
         ),
       ),
     );
@@ -150,18 +219,27 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
 
   String _getSectionTitle() {
     switch (_currentSection) {
-      case 'publicar': return 'Publicar Nuevo Trabajo';
-      case 'pagos': return 'Pagos a Trabajadores';
-      case 'calificaciones': return 'Calificar Servicios';
-      default: return 'Mis Trabajos Contratados';
+      case 'pagos':
+        return 'Pagos a Trabajadores';
+      case 'calificaciones':
+        return 'Calificar Servicios';
+      default:
+        return 'Mis Trabajos Contratados';
     }
   }
 
   // Elemento secundario del acordeón de notificaciones
-  Widget _buildNotificationSubItem(String title, String subtitle, BuildContext context) {
+  Widget _buildNotificationSubItem(
+    String title,
+    String subtitle,
+    BuildContext context,
+  ) {
     return ListTile(
       contentPadding: const EdgeInsets.only(left: 32, right: 16),
-      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 11)),
       trailing: const Icon(Icons.play_arrow_rounded, size: 16),
       onTap: () {
@@ -178,197 +256,436 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
   }
 
   // Renderiza las vistas del cuerpo principal
-  Widget _buildBodyContent(Color primaryBlue, Color cardColor, Color textColor, Color subtitleColor) {
-    if (_currentSection == 'publicar') {
-      return _buildPublishJobForm(primaryBlue, cardColor, textColor);
-    } else if (_currentSection == 'pagos') {
+  Widget _buildBodyContent(
+    Color primaryBlue,
+    Color cardColor,
+    Color textColor,
+    Color subtitleColor,
+  ) {
+    if (_currentSection == 'pagos') {
       return _buildPaymentsView(cardColor, textColor, subtitleColor);
     } else if (_currentSection == 'calificaciones') {
       return _buildRatingsView(cardColor, textColor, subtitleColor);
     } else {
-      return _buildHomeDashboard(primaryBlue, cardColor, textColor, subtitleColor);
+      return _buildHomeDashboard(
+        primaryBlue,
+        cardColor,
+        textColor,
+        subtitleColor,
+      );
     }
   }
 
   // 1. Vista de Inicio / Resumen de Contratante
-  Widget _buildHomeDashboard(Color primaryBlue, Color cardColor, Color textColor, Color subtitleColor) {
+  Widget _buildHomeDashboard(
+    Color primaryBlue,
+    Color cardColor,
+    Color textColor,
+    Color subtitleColor,
+  ) {
+    final jobs = publicJobs;
+
     return ListView(
       children: [
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [primaryBlue, primaryBlue.withValues(alpha: 0.8)]),
+            gradient: LinearGradient(
+              colors: [primaryBlue, primaryBlue.withValues(alpha: 0.8)],
+            ),
             borderRadius: BorderRadius.circular(20),
           ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Bienvenido, Contratante', style: TextStyle(color: Colors.white70, fontSize: 14)),
+              Text(
+                'Bienvenido, Contratante',
+                style: TextStyle(color: Colors.white70, fontSize: 14),
+              ),
               SizedBox(height: 6),
-              Text('Gestiona tus microturnos y pagos', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(
+                'Gestiona tus microturnos y pagos',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        Text('Trabajos Activos en Curso', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
-        const SizedBox(height: 12),
-        _buildTaskCard('Instalación de red doméstica', 'Técnico asignado: Carlos M.', 'En proceso', Colors.orange, cardColor, textColor, subtitleColor),
-        _buildTaskCard('Reparación de tubería de agua', 'Técnico asignado: Jorge P.', 'Finalizado', Colors.green, cardColor, textColor, subtitleColor),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: primaryBlue.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.work_outline_rounded, color: primaryBlue),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Trabajos publicados (${jobs.length})',
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (jobs.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Text(
+                'No hay trabajos publicados',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          )
+        else
+          for (final job in jobs)
+            _buildPublishedJobCard(
+              job,
+              primaryBlue,
+              cardColor,
+              textColor,
+              subtitleColor,
+            ),
       ],
     );
   }
 
-  // 2. Vista para Publicar Trabajo
-  Widget _buildPublishJobForm(Color primaryBlue, Color cardColor, Color textColor) {
-    return ListView(
-      children: [
-        Text('Crea una nueva solicitud de microturno', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: textColor)),
-        const SizedBox(height: 20),
-        TextField(
-          controller: _tituloController,
-          decoration: InputDecoration(
-            labelText: 'Título del trabajo (ej. Soporte técnico)',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            filled: true,
-            fillColor: cardColor,
+  Widget _buildPublishedJobCard(
+    PublicJobData job,
+    Color primaryBlue,
+    Color cardColor,
+    Color textColor,
+    Color subtitleColor,
+  ) {
+    final hasJobLocation =
+        job.latitude.isFinite &&
+        job.longitude.isFinite &&
+        job.latitude >= -90 &&
+        job.latitude <= 90 &&
+        job.longitude >= -180 &&
+        job.longitude <= 180;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: primaryBlue.withValues(alpha: 0.2)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.assignment_outlined,
+                      size: 20,
+                      color: primaryBlue,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        job.serviceType,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Ofrecimiento: \$${job.payment} MXN',
+                  style: TextStyle(
+                    color: primaryBlue,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: primaryBlue.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Descripción',
+                        style: TextStyle(
+                          color: primaryBlue,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        job.description,
+                        style: TextStyle(
+                          color: subtitleColor,
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.memory(
+                    job.photoBytes,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _descripcionController,
-          maxLines: 3,
-          decoration: InputDecoration(
-            labelText: 'Descripción detallada de la tarea',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            filled: true,
-            fillColor: cardColor,
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _pagoController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: 'Ofrecimiento económico (MXN)',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            filled: true,
-            fillColor: cardColor,
-          ),
-        ),
-        const SizedBox(height: 24),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primaryBlue,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('¡Trabajo publicado con éxito!'), backgroundColor: Colors.green),
-            );
-            setState(() => _currentSection = 'inicio');
-          },
-          child: const Text('Publicar Trabajo Ahora', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        ),
-      ],
+          if (hasJobLocation) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 280,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: LatLng(job.latitude, job.longitude),
+                    initialZoom: 15,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.tuempresa.app',
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: LatLng(job.latitude, job.longitude),
+                          width: 48,
+                          height: 48,
+                          child: const Icon(
+                            Icons.location_pin,
+                            color: Colors.red,
+                            size: 48,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
   // 3. Vista de Pagos al trabajador
-  Widget _buildPaymentsView(Color cardColor, Color textColor, Color subtitleColor) {
+  Widget _buildPaymentsView(
+    Color cardColor,
+    Color textColor,
+    Color subtitleColor,
+  ) {
     return ListView(
       children: [
-        Text('Historial y liberación de pagos', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+        Text(
+          'Historial y liberación de pagos',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
         const SizedBox(height: 16),
-        _buildPaymentTile('Instalación de red', '\$450.00 MXN', 'Liberado', cardColor, textColor),
-        _buildPaymentTile('Soporte de impresora', '\$250.00 MXN', 'Pendiente de liberación', cardColor, textColor),
+        _buildPaymentTile(
+          'Instalación de red',
+          '\$450.00 MXN',
+          'Liberado',
+          cardColor,
+          textColor,
+        ),
+        _buildPaymentTile(
+          'Soporte de impresora',
+          '\$250.00 MXN',
+          'Pendiente de liberación',
+          cardColor,
+          textColor,
+        ),
       ],
     );
   }
 
   // 4. Vista de Calificación de servicios
-  Widget _buildRatingsView(Color cardColor, Color textColor, Color subtitleColor) {
+  Widget _buildRatingsView(
+    Color cardColor,
+    Color textColor,
+    Color subtitleColor,
+  ) {
     return ListView(
       children: [
-        Text('Califica la calidad del servicio brindado', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+        Text(
+          'Califica la calidad del servicio brindado',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
         const SizedBox(height: 16),
-        _buildRatingTile('Carlos Mendoza', 'Red doméstica', 5, cardColor, textColor, subtitleColor),
-        _buildRatingTile('Jorge Luis', 'Tubería de agua', 4, cardColor, textColor, subtitleColor),
+        _buildRatingTile(
+          'Carlos Mendoza',
+          'Red doméstica',
+          5,
+          cardColor,
+          textColor,
+          subtitleColor,
+        ),
+        _buildRatingTile(
+          'Jorge Luis',
+          'Tubería de agua',
+          4,
+          cardColor,
+          textColor,
+          subtitleColor,
+        ),
       ],
     );
   }
 
   // Widgets auxiliares de diseño
-  Widget _buildTaskCard(String title, String subtitle, String status, Color statusColor, Color cardColor, Color textColor, Color subtitleColor) {
+  Widget _buildPaymentTile(
+    String concept,
+    String amount,
+    String status,
+    Color cardColor,
+    Color textColor,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor)),
+              Text(
+                concept,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: textColor,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(subtitle, style: TextStyle(fontSize: 12, color: subtitleColor)),
+              Text(
+                amount,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                  fontSize: 15,
+                ),
+              ),
             ],
           ),
-          Chip(
-            label: Text(status, style: const TextStyle(color: Colors.white, fontSize: 11)),
-            backgroundColor: statusColor,
+          Text(
+            status,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.blueGrey,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPaymentTile(String concept, String amount, String status, Color cardColor, Color textColor) {
+  Widget _buildRatingTile(
+    String worker,
+    String service,
+    int stars,
+    Color cardColor,
+    Color textColor,
+    Color subtitleColor,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(16)),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(concept, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor)),
-              const SizedBox(height: 4),
-              Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 15)),
-            ],
-          ),
-          Text(status, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blueGrey)),
-        ],
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
       ),
-    );
-  }
-
-  Widget _buildRatingTile(String worker, String service, int stars, Color cardColor, Color textColor, Color subtitleColor) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(16)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(worker, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor)),
+              Text(
+                worker,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: textColor,
+                ),
+              ),
               const SizedBox(height: 2),
-              Text('Servicio: $service', style: TextStyle(fontSize: 12, color: subtitleColor)),
+              Text(
+                'Servicio: $service',
+                style: TextStyle(fontSize: 12, color: subtitleColor),
+              ),
             ],
           ),
           Row(
-            children: List.generate(5, (index) => Icon(
-              index < stars ? Icons.star_rounded : Icons.star_border_rounded,
-              color: Colors.amber,
-              size: 20,
-            )),
+            children: List.generate(
+              5,
+              (index) => Icon(
+                index < stars ? Icons.star_rounded : Icons.star_border_rounded,
+                color: Colors.amber,
+                size: 20,
+              ),
+            ),
           ),
         ],
       ),
