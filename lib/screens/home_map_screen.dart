@@ -17,7 +17,7 @@ class HomeMapScreen extends StatefulWidget {
 }
 
 class _HomeMapScreenState extends State<HomeMapScreen> {
-  String _selectedLocation = "Tlaxcala y Puebla (Zona de prueba)";
+  final String _selectedLocation = "Tlaxcala y Puebla (Zona de prueba)";
   String _selectedCategory = "Todos";
 
   final MapController _mapController = MapController();

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'home_map_screen.dart';
-import 'dashboard.dart';
 import 'dashboard_admin.dart'; // 1. Importamos tu nuevo dashboard de administración
 import 'dashboard_contratante.dart'; // 1. Importamos tu nuevo dashboard de contratante
 import 'register_screen.dart';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/te_ayudo_app_bar.dart';
+import '../services/push_notification_service.dart';
 
 class ContratanteScreen extends StatefulWidget {
   const ContratanteScreen({super.key});
@@ -80,11 +81,11 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
                     child: Icon(Icons.person, size: 35, color: primaryBlue),
                   ),
                   const SizedBox(height: 10),
-                  Text(
+                  const Text(
                     'Panel de Contratante',
                     style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  Text(
+                  const Text(
                     'contratante@teayudo.com',
                     style: TextStyle(color: Colors.white70, fontSize: 13),
                   ),
@@ -92,7 +93,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.dashboard_rounded, color: primaryBlue),
+              leading: const Icon(Icons.dashboard_rounded, color: primaryBlue),
               title: Text('Panel Principal', style: TextStyle(color: textColor)),
               onTap: () {
                 setState(() => _currentSection = 'inicio');
@@ -100,7 +101,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.add_circle_outline_rounded, color: primaryBlue),
+              leading: const Icon(Icons.add_circle_outline_rounded, color: primaryBlue),
               title: Text('Publicar un trabajo', style: TextStyle(color: textColor)),
               onTap: () {
                 setState(() => _currentSection = 'publicar');
@@ -108,7 +109,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.payments_rounded, color: primaryBlue),
+              leading: const Icon(Icons.payments_rounded, color: primaryBlue),
               title: Text('Pago al trabajador', style: TextStyle(color: textColor)),
               onTap: () {
                 setState(() => _currentSection = 'pagos');
@@ -116,7 +117,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.star_rate_rounded, color: primaryBlue),
+              leading: const Icon(Icons.star_rate_rounded, color: primaryBlue),
               title: Text('Calificación de servicios', style: TextStyle(color: textColor)),
               onTap: () {
                 setState(() => _currentSection = 'calificaciones');
@@ -124,7 +125,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
               },
             ),
             const Divider(),
-            // --- MENÚ DESPLEGABLE PARA SIMULAR NOTIFICACIONES PUSH ---
+            // --- MENÚ DESPLEGABLE PARA DISPARAR NOTIFICACIONES PUSH REALES ---
             ExpansionTile(
               leading: const Icon(Icons.notifications_active_rounded, color: Colors.orange),
               title: Text('Simular Notificaciones', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
@@ -157,21 +158,20 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
     }
   }
 
-  // Elemento secundario del acordeón de notificaciones
+  // Elemento secundario del acordeón de notificaciones conectado al helper real
   Widget _buildNotificationSubItem(String title, String subtitle, BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.only(left: 32, right: 16),
       title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 11)),
-      trailing: const Icon(Icons.play_arrow_rounded, size: 16),
+      trailing: const Icon(Icons.notifications_active_rounded, size: 18, color: Colors.blue),
       onTap: () {
         Navigator.pop(context); // Cierra el drawer
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('🔔 Simulación Push: "$title"'),
-            backgroundColor: Colors.blueAccent,
-            duration: const Duration(seconds: 2),
-          ),
+
+        // Llamada a la función helper externa para enviar la notificación real del sistema
+        PushNotificationService.showNotification(
+          title: title,
+          body: subtitle,
         );
       },
     );
