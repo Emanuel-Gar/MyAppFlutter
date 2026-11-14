@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'services/push_notification_service.dart';
 
 import 'screens/login.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializamos las notificaciones reales
+  await PushNotificationService.initNotification();
+
   runApp(const MyApp());
 }
 

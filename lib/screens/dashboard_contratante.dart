@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import '../services/publicjob_service.dart';
 import 'public_job_screen.dart';
 import '../widgets/te_ayudo_app_bar.dart';
+import '../services/push_notification_service.dart';
 
 class ContratanteScreen extends StatefulWidget {
   const ContratanteScreen({super.key});
@@ -103,7 +104,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
                     child: Icon(Icons.person, size: 35, color: primaryBlue),
                   ),
                   const SizedBox(height: 10),
-                  Text(
+                  const Text(
                     'Panel de Contratante',
                     style: TextStyle(
                       color: Colors.white,
@@ -111,7 +112,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
+                  const Text(
                     'contratante@teayudo.com',
                     style: TextStyle(color: Colors.white70, fontSize: 13),
                   ),
@@ -119,17 +120,23 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
               ),
             ),
             ListTile(
+<<<<<<< HEAD
               leading: Icon(Icons.dashboard_rounded, color: primaryBlue),
               title: Text(
                 'Panel Principal',
                 style: TextStyle(color: textColor),
               ),
+=======
+              leading: const Icon(Icons.dashboard_rounded, color: primaryBlue),
+              title: Text('Panel Principal', style: TextStyle(color: textColor)),
+>>>>>>> uri
               onTap: () {
                 setState(() => _currentSection = 'inicio');
                 Navigator.pop(context);
               },
             ),
             ListTile(
+<<<<<<< HEAD
               leading: Icon(
                 Icons.add_circle_outline_rounded,
                 color: primaryBlue,
@@ -138,35 +145,49 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
                 'Publicar un trabajo',
                 style: TextStyle(color: textColor),
               ),
+=======
+              leading: const Icon(Icons.add_circle_outline_rounded, color: primaryBlue),
+              title: Text('Publicar un trabajo', style: TextStyle(color: textColor)),
+>>>>>>> uri
               onTap: () {
                 Navigator.pop(context);
                 _openPublicJobScreen();
               },
             ),
             ListTile(
+<<<<<<< HEAD
               leading: Icon(Icons.payments_rounded, color: primaryBlue),
               title: Text(
                 'Pago al trabajador',
                 style: TextStyle(color: textColor),
               ),
+=======
+              leading: const Icon(Icons.payments_rounded, color: primaryBlue),
+              title: Text('Pago al trabajador', style: TextStyle(color: textColor)),
+>>>>>>> uri
               onTap: () {
                 setState(() => _currentSection = 'pagos');
                 Navigator.pop(context);
               },
             ),
             ListTile(
+<<<<<<< HEAD
               leading: Icon(Icons.star_rate_rounded, color: primaryBlue),
               title: Text(
                 'Calificación de servicios',
                 style: TextStyle(color: textColor),
               ),
+=======
+              leading: const Icon(Icons.star_rate_rounded, color: primaryBlue),
+              title: Text('Calificación de servicios', style: TextStyle(color: textColor)),
+>>>>>>> uri
               onTap: () {
                 setState(() => _currentSection = 'calificaciones');
                 Navigator.pop(context);
               },
             ),
             const Divider(),
-            // --- MENÚ DESPLEGABLE PARA SIMULAR NOTIFICACIONES PUSH ---
+            // --- MENÚ DESPLEGABLE PARA DISPARAR NOTIFICACIONES PUSH REALES ---
             ExpansionTile(
               leading: const Icon(
                 Icons.notifications_active_rounded,
@@ -228,12 +249,17 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
     }
   }
 
+<<<<<<< HEAD
   // Elemento secundario del acordeón de notificaciones
   Widget _buildNotificationSubItem(
     String title,
     String subtitle,
     BuildContext context,
   ) {
+=======
+  // Elemento secundario del acordeón de notificaciones conectado al helper real
+  Widget _buildNotificationSubItem(String title, String subtitle, BuildContext context) {
+>>>>>>> uri
     return ListTile(
       contentPadding: const EdgeInsets.only(left: 32, right: 16),
       title: Text(
@@ -241,15 +267,14 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 11)),
-      trailing: const Icon(Icons.play_arrow_rounded, size: 16),
+      trailing: const Icon(Icons.notifications_active_rounded, size: 18, color: Colors.blue),
       onTap: () {
         Navigator.pop(context); // Cierra el drawer
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('🔔 Simulación Push: "$title"'),
-            backgroundColor: Colors.blueAccent,
-            duration: const Duration(seconds: 2),
-          ),
+
+        // Llamada a la función helper externa para enviar la notificación real del sistema
+        PushNotificationService.showNotification(
+          title: title,
+          body: subtitle,
         );
       },
     );
