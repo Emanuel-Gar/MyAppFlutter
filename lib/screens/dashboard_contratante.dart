@@ -120,67 +120,32 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
               ),
             ),
             ListTile(
-<<<<<<< HEAD
-              leading: Icon(Icons.dashboard_rounded, color: primaryBlue),
-              title: Text(
-                'Panel Principal',
-                style: TextStyle(color: textColor),
-              ),
-=======
               leading: const Icon(Icons.dashboard_rounded, color: primaryBlue),
               title: Text('Panel Principal', style: TextStyle(color: textColor)),
->>>>>>> uri
               onTap: () {
                 setState(() => _currentSection = 'inicio');
                 Navigator.pop(context);
               },
             ),
             ListTile(
-<<<<<<< HEAD
-              leading: Icon(
-                Icons.add_circle_outline_rounded,
-                color: primaryBlue,
-              ),
-              title: Text(
-                'Publicar un trabajo',
-                style: TextStyle(color: textColor),
-              ),
-=======
               leading: const Icon(Icons.add_circle_outline_rounded, color: primaryBlue),
               title: Text('Publicar un trabajo', style: TextStyle(color: textColor)),
->>>>>>> uri
               onTap: () {
                 Navigator.pop(context);
                 _openPublicJobScreen();
               },
             ),
             ListTile(
-<<<<<<< HEAD
-              leading: Icon(Icons.payments_rounded, color: primaryBlue),
-              title: Text(
-                'Pago al trabajador',
-                style: TextStyle(color: textColor),
-              ),
-=======
               leading: const Icon(Icons.payments_rounded, color: primaryBlue),
               title: Text('Pago al trabajador', style: TextStyle(color: textColor)),
->>>>>>> uri
               onTap: () {
                 setState(() => _currentSection = 'pagos');
                 Navigator.pop(context);
               },
             ),
             ListTile(
-<<<<<<< HEAD
-              leading: Icon(Icons.star_rate_rounded, color: primaryBlue),
-              title: Text(
-                'Calificación de servicios',
-                style: TextStyle(color: textColor),
-              ),
-=======
               leading: const Icon(Icons.star_rate_rounded, color: primaryBlue),
               title: Text('Calificación de servicios', style: TextStyle(color: textColor)),
->>>>>>> uri
               onTap: () {
                 setState(() => _currentSection = 'calificaciones');
                 Navigator.pop(context);
@@ -249,17 +214,8 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
     }
   }
 
-<<<<<<< HEAD
-  // Elemento secundario del acordeón de notificaciones
-  Widget _buildNotificationSubItem(
-    String title,
-    String subtitle,
-    BuildContext context,
-  ) {
-=======
   // Elemento secundario del acordeón de notificaciones conectado al helper real
   Widget _buildNotificationSubItem(String title, String subtitle, BuildContext context) {
->>>>>>> uri
     return ListTile(
       contentPadding: const EdgeInsets.only(left: 32, right: 16),
       title: Text(
