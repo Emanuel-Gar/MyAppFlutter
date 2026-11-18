@@ -28,6 +28,10 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>La aplicación necesita tu ubicación para marcar tu posición actual en el mapa.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>La aplicación necesita acceso a la cámara para tomar una foto del trabajo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>La aplicación necesita acceso a tus fotos para agregarlas al trabajo.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
