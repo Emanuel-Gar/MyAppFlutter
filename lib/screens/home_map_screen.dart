@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import '../models/job_task.dart';
+import '../services/publicjob_service.dart';
 import '../widgets/te_ayudo_app_bar.dart';
 import 'job_detail_screen.dart';
 
@@ -17,11 +20,15 @@ class HomeMapScreen extends StatefulWidget {
 }
 
 class _HomeMapScreenState extends State<HomeMapScreen> {
-  final String _selectedLocation = "Tlaxcala y Puebla (Zona de prueba)";
   String _selectedCategory = "Todos";
 
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
+  PublicJobData? _acceptedPublicJob;
+  List<LatLng> _acceptedRoute = const [];
+  bool _isCalculatingRoute = false;
+  int _routeRequestId = 0;
+  final Distance _distanceCalculator = const Distance();
   String _locationMessage = 'Buscando tu ubicación...';
   bool _mapReady = false;
   bool _hasCenteredOnLocation = false;
@@ -66,6 +73,43 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
     ),
   ];
 
+  List<JobTask> get _nearbyTasks => _tasks
+      .where((task) => _isWithinSearchRadius(task.latitude, task.longitude))
+      .toList();
+
+  List<PublicJobData> get _nearbyPublicJobs => publicJobs
+      .where((job) => _isWithinSearchRadius(job.latitude, job.longitude))
+      .toList();
+
+  bool _isWithinSearchRadius(double latitude, double longitude) {
+    final currentLocation = _currentLocation;
+    if (currentLocation == null) return false;
+    if (!latitude.isFinite ||
+        latitude < -90 ||
+        latitude > 90 ||
+        !longitude.isFinite ||
+        longitude < -180 ||
+        longitude > 180) {
+      return false;
+    }
+
+    return _distanceCalculator.as(
+          LengthUnit.Kilometer,
+          currentLocation,
+          LatLng(latitude, longitude),
+        ) <=
+        20;
+  }
+
+  String _distanceLabel(double latitude, double longitude) {
+    final distance = _distanceCalculator.as(
+      LengthUnit.Kilometer,
+      _currentLocation!,
+      LatLng(latitude, longitude),
+    );
+    return '${distance.toStringAsFixed(1)} km';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -97,7 +141,12 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition();
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 20),
+        ),
+      );
       if (!mounted) return;
       _updateCurrentLocation(position);
 
@@ -143,9 +192,195 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
 
   void _centerOnCurrentLocation() {
     if (_mapReady && !_hasCenteredOnLocation && _currentLocation != null) {
-      _mapController.move(_currentLocation!, 15);
+      _mapController.move(_currentLocation!, 10);
       _hasCenteredOnLocation = true;
     }
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _showPublicJobDialog(PublicJobData job) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(job.serviceType),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(job.description),
+            const SizedBox(height: 8),
+            Text('Pago ofrecido: \$${job.payment} MXN'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              unawaited(_acceptPublicJob(job));
+            },
+            child: const Text('Aceptar trabajo'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _acceptPublicJob(PublicJobData job) async {
+    final origin = _currentLocation;
+    if (origin == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No se puede aceptar: no está disponible tu ubicación.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final requestId = ++_routeRequestId;
+    setState(() {
+      _acceptedPublicJob = job;
+      _acceptedRoute = const [];
+      _isCalculatingRoute = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Calculando ruta por calles...')),
+    );
+
+    try {
+      final route = await _fetchRoadRoute(
+        origin,
+        LatLng(job.latitude, job.longitude),
+      );
+      if (!mounted || requestId != _routeRequestId) return;
+
+      setState(() {
+        _acceptedRoute = route;
+        _isCalculatingRoute = false;
+      });
+      _mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: LatLngBounds.fromPoints(route),
+          padding: const EdgeInsets.all(48),
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ruta por calles marcada en el mapa.')),
+      );
+    } on TimeoutException {
+      _showRouteError(
+        requestId,
+        'El servicio de rutas tardó demasiado. Intenta de nuevo.',
+      );
+    } on http.ClientException {
+      _showRouteError(
+        requestId,
+        'No se pudo conectar al servicio de rutas. Intenta de nuevo.',
+      );
+    } on FormatException {
+      _showRouteError(
+        requestId,
+        'No se encontró una ruta para este trabajo. Intenta de nuevo.',
+      );
+    }
+  }
+
+  void _cancelAcceptedJob() {
+    ++_routeRequestId;
+    setState(() {
+      _acceptedPublicJob = null;
+      _acceptedRoute = const [];
+      _isCalculatingRoute = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Trabajo cancelado. Ruta eliminada.')),
+    );
+  }
+
+  Future<List<LatLng>> _fetchRoadRoute(
+    LatLng origin,
+    LatLng destination,
+  ) async {
+    final uri = Uri.https(
+      'router.project-osrm.org',
+      '/route/v1/driving/${origin.longitude},${origin.latitude};'
+          '${destination.longitude},${destination.latitude}',
+      {'overview': 'full', 'geometries': 'geojson'},
+    );
+    final response = await http
+        .get(uri, headers: const {'User-Agent': 'teayudoapp/1.0'})
+        .timeout(const Duration(seconds: 20));
+    if (response.statusCode != 200) {
+      throw const FormatException('El servicio de rutas no está disponible.');
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> || decoded['code'] != 'Ok') {
+      throw const FormatException('La respuesta de rutas no es válida.');
+    }
+    final routes = decoded['routes'];
+    if (routes is! List || routes.isEmpty) {
+      throw const FormatException('No se encontró una ruta.');
+    }
+    final firstRoute = routes.first;
+    if (firstRoute is! Map<String, dynamic>) {
+      throw const FormatException('La ruta recibida no es válida.');
+    }
+    final geometry = firstRoute['geometry'];
+    if (geometry is! Map<String, dynamic>) {
+      throw const FormatException('La geometría de la ruta no es válida.');
+    }
+    final coordinates = geometry['coordinates'];
+    if (coordinates is! List || coordinates.length < 2) {
+      throw const FormatException('La ruta no contiene suficientes puntos.');
+    }
+
+    final routePoints = <LatLng>[];
+    for (final coordinate in coordinates) {
+      if (coordinate is! List || coordinate.length < 2) {
+        throw const FormatException('Un punto de la ruta no es válido.');
+      }
+      final longitudeValue = coordinate[0];
+      final latitudeValue = coordinate[1];
+      if (longitudeValue is! num || latitudeValue is! num) {
+        throw const FormatException(
+          'Las coordenadas de la ruta no son válidas.',
+        );
+      }
+
+      final longitude = longitudeValue.toDouble();
+      final latitude = latitudeValue.toDouble();
+      if (!longitude.isFinite ||
+          longitude < -180 ||
+          longitude > 180 ||
+          !latitude.isFinite ||
+          latitude < -90 ||
+          latitude > 90) {
+        throw const FormatException(
+          'Las coordenadas de la ruta están fuera de rango.',
+        );
+      }
+      routePoints.add(LatLng(latitude, longitude));
+    }
+
+    return [origin, ...routePoints, destination];
+  }
+
+  void _showRouteError(int requestId, String message) {
+    if (!mounted || requestId != _routeRequestId) return;
+    setState(() => _isCalculatingRoute = false);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -155,9 +390,7 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
     final primaryColor = isDarkMode
         ? const Color(0xFF12202E)
         : const Color(0xFF1976D2);
-    final backgroundColor = isDarkMode
-        ? const Color(0xFF0C1620)
-        : Colors.white;
+    final backgroundColor = isDarkMode ? const Color(0xFF0C1620) : Colors.white;
     final cardColor = isDarkMode ? const Color(0xFF12202E) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
 
@@ -192,14 +425,14 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                       child: Row(
                         children: [
                           const Icon(
-                            Icons.location_on,
-                            color: Colors.red,
+                            Icons.my_location,
+                            color: Colors.blue,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              _selectedLocation,
+                              _locationMessage,
                               style: TextStyle(
                                 color: textColor,
                                 fontSize: 13,
@@ -300,39 +533,141 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  FlutterMap(
-                    mapController: _mapController,
-                    options: MapOptions(
-                      initialCenter: const LatLng(19.31777, -98.23846),
-                      initialZoom: 13.0,
-                      onMapReady: _onMapReady,
-                    ),
-
-                    children: [
-                      // Capa del mapa de OpenStreetMap
-                      TileLayer(
-                        urlTemplate:
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.tuempresa.app',
+                  if (_currentLocation == null)
+                    Center(
+                      child: Text(
+                        _locationMessage,
+                        style: TextStyle(color: textColor),
+                        textAlign: TextAlign.center,
                       ),
-
-                      MarkerLayer(
-                        markers: [
-                          if (_currentLocation != null)
+                    )
+                  else
+                    FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: _currentLocation!,
+                        initialZoom: 10.0,
+                        onMapReady: _onMapReady,
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.tuempresa.app',
+                        ),
+                        PolylineLayer(
+                          polylines: [
+                            if (_acceptedRoute.isNotEmpty)
+                              Polyline(
+                                points: _acceptedRoute,
+                                strokeWidth: 4,
+                                color: Colors.blue,
+                              ),
+                          ],
+                        ),
+                        MarkerLayer(
+                          markers: [
                             Marker(
                               point: _currentLocation!,
-                              width: 40,
-                              height: 40,
+                              width: 48,
+                              height: 48,
                               child: const Icon(
                                 Icons.my_location,
                                 color: Colors.blue,
                                 size: 40,
                               ),
                             ),
-                        ],
+                            for (final job in _nearbyPublicJobs)
+                              Marker(
+                                point: LatLng(job.latitude, job.longitude),
+                                width: 48,
+                                height: 48,
+                                child: GestureDetector(
+                                  onTap: _isCalculatingRoute
+                                      ? null
+                                      : () => _showPublicJobDialog(job),
+                                  child: const Icon(
+                                    Icons.business_center,
+                                    color: Colors.red,
+                                    size: 36,
+                                  ),
+                                ),
+                              ),
+                            for (final task in _nearbyTasks)
+                              Marker(
+                                point: LatLng(task.latitude, task.longitude),
+                                width: 48,
+                                height: 48,
+                                child: GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          JobDetailScreen(task: task),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    task.type == TaskType.oficio
+                                        ? Icons.build
+                                        : Icons.task_alt,
+                                    color: Colors.deepOrange,
+                                    size: 36,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                  if (_isCalculatingRoute)
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Calculando ruta...',
+                                style: TextStyle(color: textColor),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+
+                  if (_acceptedPublicJob != null)
+                    Positioned(
+                      bottom: 82,
+                      left: 20,
+                      right: 20,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.red.shade700,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(color: Colors.red.shade700),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: _cancelAcceptedJob,
+                        icon: const Icon(Icons.cancel_outlined),
+                        label: const Text('Cancelar trabajo'),
+                      ),
+                    ),
 
                   // Botón flotante para ver lista de resultados rápidos inferiores[cite: 2]
                   Positioned(
@@ -407,6 +742,8 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
   }
 
   void _showBottomSheetResults(BuildContext context) {
+    final nearbyPublicJobs = _nearbyPublicJobs;
+    final nearbyTasks = _nearbyTasks;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -436,57 +773,109 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
               "Trabajos y ayudas cercanas",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 4),
+            Text(
+              'Dentro de 20 km de tu ubicación actual '
+              '(${nearbyPublicJobs.length + nearbyTasks.length})',
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
             const SizedBox(height: 10),
             Expanded(
-              child: ListView.builder(
-                itemCount: _tasks.length,
-                itemBuilder: (context, index) {
-                  final task = _tasks[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: task.type == TaskType.oficio
-                            ? Colors.blue.shade100
-                            : Colors.orange.shade100,
-                        child: Icon(
-                          task.type == TaskType.oficio
-                              ? Icons.build
-                              : Icons.task_alt,
-                          color: task.type == TaskType.oficio
-                              ? Colors.blue
-                              : Colors.orange,
-                        ),
-                      ),
-                      title: Text(
-                        task.title,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        "${task.category} • ${task.distance}\n${task.schedule}",
-                      ),
-                      isThreeLine: true,
-                      trailing: Text(
-                        "\$${task.payment.toStringAsFixed(0)} MXN",
-                        style: const TextStyle(
-                          color: Color(0xFF2E7D32),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.pop(context); // Cierra bottom sheet
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => JobDetailScreen(task: task),
+              child: nearbyPublicJobs.isEmpty && nearbyTasks.isEmpty
+                  ? const Center(
+                      child: Text('No hay trabajos dentro del radio de 20 km.'),
+                    )
+                  : ListView(
+                      children: [
+                        for (final job in nearbyPublicJobs)
+                          Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: const CircleAvatar(
+                                backgroundColor: Color(0xFFFFEBEE),
+                                child: Icon(
+                                  Icons.business_center,
+                                  color: Colors.red,
+                                ),
+                              ),
+                              title: Text(
+                                job.serviceType,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${_distanceLabel(job.latitude, job.longitude)}'
+                                '\n${job.description}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              isThreeLine: true,
+                              trailing: Text(
+                                '\$${job.payment} MXN',
+                                style: const TextStyle(
+                                  color: Color(0xFF2E7D32),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _showPublicJobDialog(job);
+                              },
+                            ),
                           ),
-                        );
-                      },
+                        for (final task in nearbyTasks)
+                          Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: task.type == TaskType.oficio
+                                    ? Colors.blue.shade100
+                                    : Colors.orange.shade100,
+                                child: Icon(
+                                  task.type == TaskType.oficio
+                                      ? Icons.build
+                                      : Icons.task_alt,
+                                  color: task.type == TaskType.oficio
+                                      ? Colors.blue
+                                      : Colors.orange,
+                                ),
+                              ),
+                              title: Text(
+                                task.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${task.category} • '
+                                '${_distanceLabel(task.latitude, task.longitude)}'
+                                '\n${task.schedule}',
+                              ),
+                              isThreeLine: true,
+                              trailing: Text(
+                                '\$${task.payment.toStringAsFixed(0)} MXN',
+                                style: const TextStyle(
+                                  color: Color(0xFF2E7D32),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        JobDetailScreen(task: task),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                      ],
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),

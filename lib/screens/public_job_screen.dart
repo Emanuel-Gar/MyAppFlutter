@@ -5,7 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/publicjob_service.dart';
-import '../widgets/te_ayudo_app_bar.dart';
+import '../widgets/contratante_app_bar.dart';
 
 class PublicJobScreen extends StatefulWidget {
   const PublicJobScreen({super.key});
@@ -146,15 +146,7 @@ class _PublicJobScreenState extends State<PublicJobScreen> {
     final textColor = isDarkMode ? Colors.white : Colors.grey[800]!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Publicar Nuevo Trabajo',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : primaryBlue,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: const [ThemeToggleButton()],
-      ),
+      appBar: const ContratanteAppBar(title: 'Publicar Nuevo Trabajo'),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),

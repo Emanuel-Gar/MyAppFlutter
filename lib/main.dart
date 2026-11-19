@@ -43,6 +43,9 @@ class MyApp extends StatelessWidget {
           ),
           themeMode: themeMode,
           home: const LoginScreen(),
+          routes: {
+            '/login': (context) => const LoginScreen(),
+          },
         );
       },
     );

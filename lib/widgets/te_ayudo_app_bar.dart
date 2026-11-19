@@ -39,7 +39,9 @@ class TeAyudoAppBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 class ThemeToggleButton extends StatelessWidget {
-  const ThemeToggleButton({super.key});
+  const ThemeToggleButton({super.key, this.iconColor});
+
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +49,10 @@ class ThemeToggleButton extends StatelessWidget {
 
     return IconButton(
       tooltip: isDarkMode ? 'Activar modo claro' : 'Activar modo oscuro',
-      icon: Icon(isDarkMode ? Icons.light_mode : Icons.dark_mode),
+      icon: Icon(
+        isDarkMode ? Icons.light_mode : Icons.dark_mode,
+        color: iconColor,
+      ),
       onPressed: toggleAppTheme,
     );
   }

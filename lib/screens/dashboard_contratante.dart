@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../services/publicjob_service.dart';
 import 'public_job_screen.dart';
-import '../widgets/te_ayudo_app_bar.dart';
+import '../widgets/contratante_app_bar.dart';
 import '../services/push_notification_service.dart';
 
 class ContratanteScreen extends StatefulWidget {
@@ -48,44 +48,9 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
     final textColor = isDarkMode ? Colors.white : Colors.grey[800]!;
     final subtitleColor = isDarkMode ? Colors.grey[400]! : Colors.grey[600]!;
 
-    final appBarColor = isDarkMode ? const Color(0xFF1E1E1E) : primaryBlue;
-
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: Text(
-          _getSectionTitle(),
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: appBarColor,
-        elevation: 2,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: ThemeToggleButton(),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
-              child: const Text(
-                'CC', // Contratante Cliente
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      appBar: ContratanteAppBar(title: _getSectionTitle()),
       // --- MENÚ DE HAMBURGUESA (DRAWER) ---
       drawer: Drawer(
         backgroundColor: cardColor,
@@ -121,15 +86,24 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.dashboard_rounded, color: primaryBlue),
-              title: Text('Panel Principal', style: TextStyle(color: textColor)),
+              title: Text(
+                'Panel Principal',
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 setState(() => _currentSection = 'inicio');
                 Navigator.pop(context);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.add_circle_outline_rounded, color: primaryBlue),
-              title: Text('Publicar un trabajo', style: TextStyle(color: textColor)),
+              leading: const Icon(
+                Icons.add_circle_outline_rounded,
+                color: primaryBlue,
+              ),
+              title: Text(
+                'Publicar un trabajo',
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _openPublicJobScreen();
@@ -137,7 +111,10 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.payments_rounded, color: primaryBlue),
-              title: Text('Pago al trabajador', style: TextStyle(color: textColor)),
+              title: Text(
+                'Pago al trabajador',
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 setState(() => _currentSection = 'pagos');
                 Navigator.pop(context);
@@ -145,7 +122,10 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.star_rate_rounded, color: primaryBlue),
-              title: Text('Calificación de servicios', style: TextStyle(color: textColor)),
+              title: Text(
+                'Calificación de servicios',
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 setState(() => _currentSection = 'calificaciones');
                 Navigator.pop(context);
@@ -215,7 +195,11 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
   }
 
   // Elemento secundario del acordeón de notificaciones conectado al helper real
-  Widget _buildNotificationSubItem(String title, String subtitle, BuildContext context) {
+  Widget _buildNotificationSubItem(
+    String title,
+    String subtitle,
+    BuildContext context,
+  ) {
     return ListTile(
       contentPadding: const EdgeInsets.only(left: 32, right: 16),
       title: Text(
@@ -223,15 +207,16 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 11)),
-      trailing: const Icon(Icons.notifications_active_rounded, size: 18, color: Colors.blue),
+      trailing: const Icon(
+        Icons.notifications_active_rounded,
+        size: 18,
+        color: Colors.blue,
+      ),
       onTap: () {
         Navigator.pop(context); // Cierra el drawer
 
         // Llamada a la función helper externa para enviar la notificación real del sistema
-        PushNotificationService.showNotification(
-          title: title,
-          body: subtitle,
-        );
+        PushNotificationService.showNotification(title: title, body: subtitle);
       },
     );
   }
