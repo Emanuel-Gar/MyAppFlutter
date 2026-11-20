@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../models/job_task.dart';
+import '../services/publicjob_service.dart';
 import '../widgets/te_ayudo_app_bar.dart';
-import 'chat_screen.dart';
 
 class JobDetailScreen extends StatelessWidget {
-  final JobTask task;
+  const JobDetailScreen({super.key, required this.job, required this.onAccept});
 
-  const JobDetailScreen({super.key, required this.task});
+  final PublicJobData job;
+  final VoidCallback onAccept;
+
+  String _formatDateTime(DateTime value) {
+    final date = value.toLocal();
+    String twoDigits(int number) => number.toString().padLeft(2, '0');
+    return '${twoDigits(date.day)}/${twoDigits(date.month)}/${date.year} '
+        '${twoDigits(date.hour)}:${twoDigits(date.minute)}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,117 +22,143 @@ class JobDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(task.category),
-        backgroundColor: isDarkMode
-            ? const Color(0xFF12202E)
-            : Colors.blue,
+        title: Text(job.serviceType),
+        backgroundColor: isDarkMode ? const Color(0xFF12202E) : Colors.blue,
         foregroundColor: Colors.white,
         actions: const [ThemeToggleButton()],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Título principal
-            Text(
-              task.title,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-
-            // Distancia y tipo
-            Row(
-              children: [
-                Chip(
-                  label: Text(task.type == TaskType.oficio ? "Oficio profesional" : "Ayuda rápida / Tarea simple"),
-                  backgroundColor: task.type == TaskType.oficio ? Colors.blue.shade50 : Colors.orange.shade50,
-                  labelStyle: TextStyle(
-                    color: task.type == TaskType.oficio ? Colors.blue.shade800 : Colors.orange.shade800,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Icon(Icons.location_on, size: 16, color: Colors.grey),
-                Text(" A ${task.distance} de ti", style: const TextStyle(color: Colors.grey, fontSize: 13)),
-              ],
-            ),
-            const Divider(height: 30),
-
-            // En qué consiste (Descripción)
-            const Text("Descripción de la tarea", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Text(
-              task.description,
-              style: TextStyle(
-                fontSize: 15,
-                color: Theme.of(context).colorScheme.onSurface,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Horario / Duración estimada
-            Row(
-              children: [
-                const Icon(Icons.access_time, color: Colors.blue),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Horario / Duración estimada", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    Text(task.schedule, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Pago ofrecido
-            Row(
-              children: [
-                const Icon(Icons.payments, color: Color(0xFF2E7D32)),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Pago ofrecido", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    Text(
-                      "\$${task.payment.toStringAsFixed(2)} MXN",
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const Spacer(),
-
-            // Botón de aceptación / contratación dentro de la app (Verde institucional)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  // AQUÍ ES EXACTAMENTE DONDE LO VAS A PONER:
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        recipientName: "María López (Solicitante)",
-                        taskTitle: task.title,
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  if (job.photoBytes.isNotEmpty) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.memory(
+                        job.photoBytes,
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  );
-                },
-                child: const Text("Aceptar trabajo y contactar", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 20),
+                  ],
+                  Text(
+                    job.serviceType,
+                    style: Theme.of(context).textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  _DetailRow(
+                    icon: Icons.description_outlined,
+                    label: 'Descripción',
+                    value: job.description,
+                  ),
+                  _DetailRow(
+                    icon: Icons.timer_outlined,
+                    label: 'Duración estimada',
+                    value: job.estimatedDuration,
+                  ),
+                  _DetailRow(
+                    icon: Icons.calendar_month_outlined,
+                    label: 'Fecha y hora de publicación',
+                    value: _formatDateTime(job.registeredAt),
+                  ),
+                  _DetailRow(
+                    icon: Icons.location_on_outlined,
+                    label: 'Ubicación del trabajo',
+                    value:
+                        '${job.latitude.toStringAsFixed(6)}, '
+                        '${job.longitude.toStringAsFixed(6)}',
+                  ),
+                  _DetailRow(
+                    icon: Icons.payments_outlined,
+                    label: 'Pago ofrecido',
+                    value: '\$${job.payment} MXN',
+                    valueColor: const Color(0xFF2E7D32),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2E7D32),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    onAccept();
+                  },
+                  child: const Text(
+                    'Aceptar trabajo',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            color: valueColor ?? Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.labelLarge),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: valueColor,
+                    fontWeight: valueColor == null
+                        ? FontWeight.normal
+                        : FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

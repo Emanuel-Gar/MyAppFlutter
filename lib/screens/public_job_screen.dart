@@ -19,6 +19,7 @@ class _PublicJobScreenState extends State<PublicJobScreen> {
   final _serviceTypeController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _paymentController = TextEditingController();
+  final _estimatedDurationController = TextEditingController();
   final _imagePicker = ImagePicker();
   Position? _jobLocation;
   Uint8List? _selectedPhotoBytes;
@@ -30,6 +31,7 @@ class _PublicJobScreenState extends State<PublicJobScreen> {
     _serviceTypeController.dispose();
     _descriptionController.dispose();
     _paymentController.dispose();
+    _estimatedDurationController.dispose();
     super.dispose();
   }
 
@@ -128,6 +130,7 @@ class _PublicJobScreenState extends State<PublicJobScreen> {
         serviceType: _serviceTypeController.text.trim(),
         description: _descriptionController.text.trim(),
         payment: _paymentController.text.trim(),
+        estimatedDuration: _estimatedDurationController.text.trim(),
         latitude: _jobLocation!.latitude,
         longitude: _jobLocation!.longitude,
         photoBytes: _selectedPhotoBytes!,
@@ -223,6 +226,23 @@ class _PublicJobScreenState extends State<PublicJobScreen> {
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _estimatedDurationController,
+                    keyboardType: TextInputType.text,
+                    decoration: InputDecoration(
+                      labelText: 'Duración estimada del trabajo (obligatoria)',
+                      hintText: 'Ej. 2 horas',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      filled: true,
+                      fillColor: cardColor,
+                    ),
+                    validator: (value) => value == null || value.trim().isEmpty
+                        ? 'Ingresa la duración estimada.'
+                        : null,
                   ),
                 ],
               ),

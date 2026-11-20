@@ -33,7 +33,17 @@ class TeAyudoAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ],
       ),
-      actions: const [ThemeToggleButton()],
+      actions: [
+        const ThemeToggleButton(),
+        IconButton(
+          tooltip: 'Cerrar sesión',
+          icon: const Icon(Icons.logout),
+          onPressed: () {
+            Navigator.of(context)
+                .pushNamedAndRemoveUntil('/login', (route) => false);
+          },
+        ),
+      ],
     );
   }
 }

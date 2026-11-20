@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../services/publicjob_service.dart';
+import 'accpted_job_contratante_screen.dart';
 import 'public_job_screen.dart';
 import '../widgets/contratante_app_bar.dart';
 import '../services/push_notification_service.dart';
@@ -32,6 +33,14 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
         backgroundColor: Colors.green,
       ),
     );
+  }
+
+  Future<void> _openAcceptedJobStatus(PublicJobData job) async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => AcceptedJobContratanteScreen(job: job)),
+    );
+    if (mounted) setState(() {});
   }
 
   @override
@@ -190,7 +199,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
       case 'calificaciones':
         return 'Calificar Servicios';
       default:
-        return 'Mis Trabajos Contratados';
+        return 'Inicio';
     }
   }
 
@@ -340,6 +349,18 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
     Color textColor,
     Color subtitleColor,
   ) {
+    final isAccepted = job.trabajoAceptado == 1;
+    final isCompleted = job.trabajoAceptado == 2;
+    final isConfirmed = job.trabajoAceptado == 3;
+    final theme = Theme.of(context);
+    final highlightColor = isAccepted
+        ? theme.colorScheme.tertiaryContainer
+        : isCompleted
+        ? ColorScheme.fromSeed(
+            seedColor: Colors.green,
+            brightness: theme.brightness,
+          ).primaryContainer
+        : null;
     final hasJobLocation =
         job.latitude.isFinite &&
         job.longitude.isFinite &&
@@ -348,99 +369,112 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
         job.longitude >= -180 &&
         job.longitude <= 180;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+    final jobCard = Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: highlightColor != null ? Colors.transparent : cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: primaryBlue.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: primaryBlue.withValues(alpha: 0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
+          Row(
+            children: [
+              Icon(Icons.assignment_outlined, size: 20, color: primaryBlue),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  job.serviceType,
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Ofrecimiento: \$${job.payment} MXN',
+            style: TextStyle(color: primaryBlue, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: primaryBlue.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.assignment_outlined,
-                      size: 20,
-                      color: primaryBlue,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        job.serviceType,
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
                 Text(
-                  'Ofrecimiento: \$${job.payment} MXN',
+                  'Descripción',
                   style: TextStyle(
                     color: primaryBlue,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 14),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: primaryBlue.withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Descripción',
-                        style: TextStyle(
-                          color: primaryBlue,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        job.description,
-                        style: TextStyle(
-                          color: subtitleColor,
-                          fontSize: 14,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.memory(
-                    job.photoBytes,
-                    height: 180,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
+                const SizedBox(height: 6),
+                Text(
+                  job.description,
+                  style: TextStyle(
+                    color: subtitleColor,
+                    fontSize: 14,
+                    height: 1.4,
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.memory(
+              job.photoBytes,
+              height: 180,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        children: [
+          if (highlightColor != null)
+            _AcceptedJobBlinkCard(
+              baseColor: cardColor,
+              blinkColor: highlightColor,
+              onTap: () => _openAcceptedJobStatus(job),
+              child: jobCard,
+            )
+          else if (isConfirmed)
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => _openAcceptedJobStatus(job),
+                child: jobCard,
+              ),
+            )
+          else
+            jobCard,
           if (hasJobLocation) ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -654,6 +688,70 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AcceptedJobBlinkCard extends StatefulWidget {
+  const _AcceptedJobBlinkCard({
+    required this.baseColor,
+    required this.blinkColor,
+    required this.onTap,
+    required this.child,
+  });
+
+  final Color baseColor;
+  final Color blinkColor;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  State<_AcceptedJobBlinkCard> createState() => _AcceptedJobBlinkCardState();
+}
+
+class _AcceptedJobBlinkCardState extends State<_AcceptedJobBlinkCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: widget.onTap,
+          child: widget.child,
+        ),
+      ),
+      builder: (context, child) => Container(
+        decoration: BoxDecoration(
+          color: Color.lerp(
+            widget.baseColor,
+            widget.blinkColor,
+            _controller.value,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: child,
       ),
     );
   }

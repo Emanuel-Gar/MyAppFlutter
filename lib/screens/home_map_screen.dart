@@ -7,9 +7,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
-import '../models/job_task.dart';
 import '../services/publicjob_service.dart';
 import '../widgets/te_ayudo_app_bar.dart';
+import 'accepted_job_screen.dart';
 import 'job_detail_screen.dart';
 
 class HomeMapScreen extends StatefulWidget {
@@ -25,7 +25,6 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
   final MapController _mapController = MapController();
   LatLng? _currentLocation;
   PublicJobData? _acceptedPublicJob;
-  List<LatLng> _acceptedRoute = const [];
   bool _isCalculatingRoute = false;
   int _routeRequestId = 0;
   final Distance _distanceCalculator = const Distance();
@@ -45,41 +44,20 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
     "Ayuda rápida",
   ];
 
-  // Datos mock simulados del backend / base de datos geolocalizada
-  final List<JobTask> _tasks = [
-    JobTask(
-      id: "1",
-      title: "Reparación de tubería de baño",
-      category: "Plomería",
-      description: "Se requiere plomero para revisar fuga menor debajo del lavabo principal.",
-      schedule: "Hoy, 15:00 hrs (aprox. 1h)",
-      payment: 350.0,
-      distance: "0.8 km",
-      type: TaskType.oficio,
-      latitude: 19.319,
-      longitude: -98.239,
-    ),
-    JobTask(
-      id: "2",
-      title: "Ayuda para cargar cajas en mudanza corta",
-      category: "Ayuda rápida",
-      description: "Necesito apoyo para subir 5 cajas pesadas al segundo piso.",
-      schedule: "Mañana, 10:00 hrs",
-      payment: 250.0,
-      distance: "1.2 km",
-      type: TaskType.ayudaRapida,
-      latitude: 19.325,
-      longitude: -98.245,
-    ),
-  ];
-
-  List<JobTask> get _nearbyTasks => _tasks
-      .where((task) => _isWithinSearchRadius(task.latitude, task.longitude))
-      .toList();
-
   List<PublicJobData> get _nearbyPublicJobs => publicJobs
       .where((job) => _isWithinSearchRadius(job.latitude, job.longitude))
       .toList();
+
+  PublicJobData? _findAcceptedJob() {
+    for (final job in publicJobs.reversed) {
+      if (job.trabajoAceptado == 1 ||
+          job.trabajoAceptado == 2 ||
+          (job.trabajoAceptado == 3 && !job.paymentConfirmed)) {
+        return job;
+      }
+    }
+    return null;
+  }
 
   bool _isWithinSearchRadius(double latitude, double longitude) {
     final currentLocation = _currentLocation;
@@ -113,6 +91,7 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
   @override
   void initState() {
     super.initState();
+    _acceptedPublicJob = _findAcceptedJob();
     _loadCurrentLocation();
   }
 
@@ -248,9 +227,19 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
     }
 
     final requestId = ++_routeRequestId;
+    final previousJob = _acceptedPublicJob;
+    if (previousJob != null &&
+        !identical(previousJob, job) &&
+        previousJob.trabajoAceptado == 1) {
+      previousJob.trabajoAceptado = 0;
+      previousJob.estadoTrabajo = 0;
+      previousJob.acceptedRoute = const [];
+    }
     setState(() {
       _acceptedPublicJob = job;
-      _acceptedRoute = const [];
+      job.trabajoAceptado = 1;
+      job.estadoTrabajo = 0;
+      job.acceptedRoute = const [];
       _isCalculatingRoute = true;
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -264,8 +253,8 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
       );
       if (!mounted || requestId != _routeRequestId) return;
 
+      job.acceptedRoute = route;
       setState(() {
-        _acceptedRoute = route;
         _isCalculatingRoute = false;
       });
       _mapController.fitCamera(
@@ -297,13 +286,42 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
 
   void _cancelAcceptedJob() {
     ++_routeRequestId;
+    final job = _acceptedPublicJob;
+    if (job != null && job.trabajoAceptado == 1) {
+      job.trabajoAceptado = 0;
+      job.estadoTrabajo = 0;
+      job.acceptedRoute = const [];
+    }
     setState(() {
       _acceptedPublicJob = null;
-      _acceptedRoute = const [];
       _isCalculatingRoute = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Trabajo cancelado. Ruta eliminada.')),
+    );
+  }
+
+  void _openAcceptedJob() {
+    final job = _findAcceptedJob();
+    if (job == null) return;
+    _acceptedPublicJob = job;
+
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AcceptedJobScreen(
+          job: job,
+          statusIndex: job.estadoTrabajo,
+          onStatusChanged: (index) {
+            if (!mounted || !identical(_acceptedPublicJob, job)) return;
+            setState(() {
+              job.estadoTrabajo = index;
+              job.trabajoAceptado = index == 2 ? 2 : 1;
+            });
+          },
+          onCancel: _cancelAcceptedJob,
+        ),
+      ),
     );
   }
 
@@ -385,7 +403,9 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final storedAcceptedJob = _findAcceptedJob();
+    final isDarkMode = theme.brightness == Brightness.dark;
     // Definición de colores según el documento (Azules base, Verde para éxito/botones, etc.)[cite: 2]
     final primaryColor = isDarkMode
         ? const Color(0xFF12202E)
@@ -557,9 +577,10 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                         ),
                         PolylineLayer(
                           polylines: [
-                            if (_acceptedRoute.isNotEmpty)
+                            if (storedAcceptedJob != null &&
+                                storedAcceptedJob.acceptedRoute.isNotEmpty)
                               Polyline(
-                                points: _acceptedRoute,
+                                points: storedAcceptedJob.acceptedRoute,
                                 strokeWidth: 4,
                                 color: Colors.blue,
                               ),
@@ -589,28 +610,6 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                                   child: const Icon(
                                     Icons.business_center,
                                     color: Colors.red,
-                                    size: 36,
-                                  ),
-                                ),
-                              ),
-                            for (final task in _nearbyTasks)
-                              Marker(
-                                point: LatLng(task.latitude, task.longitude),
-                                width: 48,
-                                height: 48,
-                                child: GestureDetector(
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          JobDetailScreen(task: task),
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    task.type == TaskType.oficio
-                                        ? Icons.build
-                                        : Icons.task_alt,
-                                    color: Colors.deepOrange,
                                     size: 36,
                                   ),
                                 ),
@@ -648,49 +647,58 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                       ),
                     ),
 
-                  if (_acceptedPublicJob != null)
-                    Positioned(
-                      bottom: 82,
-                      left: 20,
-                      right: 20,
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.red.shade700,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: BorderSide(color: Colors.red.shade700),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: _cancelAcceptedJob,
-                        icon: const Icon(Icons.cancel_outlined),
-                        label: const Text('Cancelar trabajo'),
-                      ),
-                    ),
-
                   // Botón flotante para ver lista de resultados rápidos inferiores[cite: 2]
                   Positioned(
-                    bottom: 20,
+                    bottom: 12,
                     left: 20,
                     right: 20,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                          0xFF2E7D32,
-                        ), // Color verde para botones importantes[cite: 2]
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2E7D32),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            icon: const Icon(Icons.near_me),
+                            label: const Text(
+                              'Ver solicitudes y trabajos',
+                              textAlign: TextAlign.center,
+                            ),
+                            onPressed: () => _showBottomSheetResults(context),
+                          ),
                         ),
-                      ),
-                      icon: const Icon(Icons.near_me),
-                      label: const Text(
-                        "Ver solicitudes y oficios cercanos",
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      onPressed: () => _showBottomSheetResults(context),
+                        if (storedAcceptedJob != null) ...[
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF1976D2),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                  horizontal: 8,
+                                ),
+                                side: const BorderSide(
+                                  color: Color(0xFF1976D2),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: const Icon(Icons.assignment_turned_in),
+                              label: const Text(
+                                'Ver trabajo aceptado',
+                                textAlign: TextAlign.center,
+                              ),
+                              onPressed: _openAcceptedJob,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ],
@@ -702,48 +710,9 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
     );
   }
 
-  Widget _buildMapPin(
-    BuildContext context, {
-    required String title,
-    required Color color,
-    required JobTask task,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => JobDetailScreen(task: task)),
-        );
-      },
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(6),
-              boxShadow: const [
-                BoxShadow(color: Colors.black26, blurRadius: 4),
-              ],
-            ),
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const Icon(Icons.location_on, color: Colors.redAccent, size: 36),
-        ],
-      ),
-    );
-  }
-
   void _showBottomSheetResults(BuildContext context) {
     final nearbyPublicJobs = _nearbyPublicJobs;
-    final nearbyTasks = _nearbyTasks;
+    final pageContext = context;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -776,12 +745,12 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
             const SizedBox(height: 4),
             Text(
               'Dentro de 20 km de tu ubicación actual '
-              '(${nearbyPublicJobs.length + nearbyTasks.length})',
+              '(${nearbyPublicJobs.length})',
               style: TextStyle(color: Colors.grey[600], fontSize: 13),
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: nearbyPublicJobs.isEmpty && nearbyTasks.isEmpty
+              child: nearbyPublicJobs.isEmpty
                   ? const Center(
                       child: Text('No hay trabajos dentro del radio de 20 km.'),
                     )
@@ -821,54 +790,14 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                               ),
                               onTap: () {
                                 Navigator.pop(context);
-                                _showPublicJobDialog(job);
-                              },
-                            ),
-                          ),
-                        for (final task in nearbyTasks)
-                          Card(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: task.type == TaskType.oficio
-                                    ? Colors.blue.shade100
-                                    : Colors.orange.shade100,
-                                child: Icon(
-                                  task.type == TaskType.oficio
-                                      ? Icons.build
-                                      : Icons.task_alt,
-                                  color: task.type == TaskType.oficio
-                                      ? Colors.blue
-                                      : Colors.orange,
-                                ),
-                              ),
-                              title: Text(
-                                task.title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(
-                                '${task.category} • '
-                                '${_distanceLabel(task.latitude, task.longitude)}'
-                                '\n${task.schedule}',
-                              ),
-                              isThreeLine: true,
-                              trailing: Text(
-                                '\$${task.payment.toStringAsFixed(0)} MXN',
-                                style: const TextStyle(
-                                  color: Color(0xFF2E7D32),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              onTap: () {
-                                Navigator.pop(context);
                                 Navigator.push(
-                                  context,
+                                  pageContext,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        JobDetailScreen(task: task),
+                                    builder: (_) => JobDetailScreen(
+                                      job: job,
+                                      onAccept: () =>
+                                          unawaited(_acceptPublicJob(job)),
+                                    ),
                                   ),
                                 );
                               },
