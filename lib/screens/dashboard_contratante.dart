@@ -19,6 +19,25 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
   // Controla qué sección se muestra en el cuerpo principal
   String _currentSection = 'inicio';
 
+  // Controladores para el formulario de Editar Perfil
+  final _nombrePerfilController = TextEditingController(
+    text: 'Contratante Cliente',
+  );
+  final _correoPerfilController = TextEditingController(
+    text: 'contratante@teayudo.com',
+  );
+  final _telefonoPerfilController = TextEditingController(
+    text: '+52 246 123 4567',
+  );
+
+  @override
+  void dispose() {
+    _nombrePerfilController.dispose();
+    _correoPerfilController.dispose();
+    _telefonoPerfilController.dispose();
+    super.dispose();
+  }
+
   Future<void> _openPublicJobScreen() async {
     final published = await Navigator.push<bool>(
       context,
@@ -57,6 +76,13 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
     final textColor = isDarkMode ? Colors.white : Colors.grey[800]!;
     final subtitleColor = isDarkMode ? Colors.grey[400]! : Colors.grey[600]!;
 
+    final nombreDrawer = _nombrePerfilController.text.trim().isEmpty
+        ? 'Panel de Contratante'
+        : _nombrePerfilController.text.trim();
+    final correoDrawer = _correoPerfilController.text.trim().isEmpty
+        ? 'contratante@teayudo.com'
+        : _correoPerfilController.text.trim();
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: ContratanteAppBar(title: _getSectionTitle()),
@@ -67,7 +93,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: primaryBlue),
+              decoration: const BoxDecoration(color: primaryBlue),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -78,17 +104,21 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
                     child: Icon(Icons.person, size: 35, color: primaryBlue),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Panel de Contratante',
-                    style: TextStyle(
+                  Text(
+                    nombreDrawer,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Text(
-                    'contratante@teayudo.com',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  Text(
+                    correoDrawer,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ],
               ),
@@ -137,6 +167,20 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
               ),
               onTap: () {
                 setState(() => _currentSection = 'calificaciones');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.manage_accounts_rounded,
+                color: primaryBlue,
+              ),
+              title: Text(
+                'Editar Perfil',
+                style: TextStyle(color: textColor),
+              ),
+              onTap: () {
+                setState(() => _currentSection = 'perfil');
                 Navigator.pop(context);
               },
             ),
@@ -198,6 +242,8 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
         return 'Pagos a Trabajadores';
       case 'calificaciones':
         return 'Calificar Servicios';
+      case 'perfil':
+        return 'Editar Mi Perfil';
       default:
         return 'Inicio';
     }
@@ -241,6 +287,13 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
       return _buildPaymentsView(cardColor, textColor, subtitleColor);
     } else if (_currentSection == 'calificaciones') {
       return _buildRatingsView(cardColor, textColor, subtitleColor);
+    } else if (_currentSection == 'perfil') {
+      return _buildEditProfileView(
+        primaryBlue,
+        cardColor,
+        textColor,
+        subtitleColor,
+      );
     } else {
       return _buildHomeDashboard(
         primaryBlue,
@@ -513,6 +566,184 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
           ],
         ],
       ),
+    );
+  }
+
+  // 2. Vista para Editar Perfil del Contratante
+  Widget _buildEditProfileView(
+    Color primaryBlue,
+    Color cardColor,
+    Color textColor,
+    Color subtitleColor,
+  ) {
+    return ListView(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: primaryBlue.withValues(alpha: 0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Center(
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 48,
+                      backgroundColor: primaryBlue.withValues(alpha: 0.14),
+                      child: Icon(
+                        Icons.person_rounded,
+                        size: 56,
+                        color: primaryBlue,
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: primaryBlue,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: cardColor, width: 2),
+                        ),
+                        child: Icon(
+                          Icons.camera_alt_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _nombrePerfilController.text.trim().isEmpty
+                    ? 'Contratante'
+                    : _nombrePerfilController.text.trim(),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Actualiza tus datos de contacto y cuenta',
+                style: TextStyle(fontSize: 13, color: subtitleColor),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Información Personal',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _nombrePerfilController,
+          style: TextStyle(color: textColor),
+          decoration: InputDecoration(
+            labelText: 'Nombre completo',
+            labelStyle: TextStyle(color: subtitleColor),
+            prefixIcon: Icon(Icons.person_outline, color: primaryBlue),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: primaryBlue.withValues(alpha: 0.25)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: primaryBlue, width: 2),
+            ),
+            filled: true,
+            fillColor: cardColor,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _correoPerfilController,
+          keyboardType: TextInputType.emailAddress,
+          style: TextStyle(color: textColor),
+          decoration: InputDecoration(
+            labelText: 'Correo electrónico',
+            labelStyle: TextStyle(color: subtitleColor),
+            prefixIcon: Icon(Icons.email_outlined, color: primaryBlue),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: primaryBlue.withValues(alpha: 0.25)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: primaryBlue, width: 2),
+            ),
+            filled: true,
+            fillColor: cardColor,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _telefonoPerfilController,
+          keyboardType: TextInputType.phone,
+          style: TextStyle(color: textColor),
+          decoration: InputDecoration(
+            labelText: 'Teléfono de contacto',
+            labelStyle: TextStyle(color: subtitleColor),
+            prefixIcon: Icon(Icons.phone_outlined, color: primaryBlue),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: primaryBlue.withValues(alpha: 0.25)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: primaryBlue, width: 2),
+            ),
+            filled: true,
+            fillColor: cardColor,
+          ),
+        ),
+        const SizedBox(height: 24),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryBlue,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: () {
+            setState(() => _currentSection = 'inicio');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('¡Perfil actualizado correctamente!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          },
+          child: const Text(
+            'Guardar Cambios',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
     );
   }
 
