@@ -30,11 +30,46 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
     text: '+52 246 123 4567',
   );
 
+  // Estado interactivo para Calificación de Servicios
+  final List<_WorkerRatingItem> _workersToRate = [
+    _WorkerRatingItem(
+      id: 'w1',
+      name: 'Carlos Mendoza',
+      service: 'Instalación de red doméstica',
+      puntualidad: 5,
+      calidad: 5,
+      atencion: 4,
+      tiempoEntrega: 5,
+    ),
+    _WorkerRatingItem(
+      id: 'w2',
+      name: 'Jorge Luis Pérez',
+      service: 'Reparación de tubería de agua',
+      puntualidad: 4,
+      calidad: 4,
+      atencion: 5,
+      tiempoEntrega: 4,
+    ),
+    _WorkerRatingItem(
+      id: 'w3',
+      name: 'Ana Sofía Ruiz',
+      service: 'Soporte técnico y mantenimiento',
+      puntualidad: 0,
+      calidad: 0,
+      atencion: 0,
+      tiempoEntrega: 0,
+    ),
+  ];
+
+  int _selectedWorkerIndex = 0;
+  final _comentarioCalificacionController = TextEditingController();
+
   @override
   void dispose() {
     _nombrePerfilController.dispose();
     _correoPerfilController.dispose();
     _telefonoPerfilController.dispose();
+    _comentarioCalificacionController.dispose();
     super.dispose();
   }
 
@@ -286,7 +321,12 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
     if (_currentSection == 'pagos') {
       return _buildPaymentsView(cardColor, textColor, subtitleColor);
     } else if (_currentSection == 'calificaciones') {
-      return _buildRatingsView(cardColor, textColor, subtitleColor);
+      return _buildRatingsView(
+        primaryBlue,
+        cardColor,
+        textColor,
+        subtitleColor,
+      );
     } else if (_currentSection == 'perfil') {
       return _buildEditProfileView(
         primaryBlue,
@@ -616,7 +656,7 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
                           shape: BoxShape.circle,
                           border: Border.all(color: cardColor, width: 2),
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.camera_alt_rounded,
                           color: Colors.white,
                           size: 16,
@@ -782,38 +822,337 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
     );
   }
 
-  // 4. Vista de Calificación de servicios
+  // 4. Vista Interactiva de Calificación de Servicios
   Widget _buildRatingsView(
+    Color primaryBlue,
     Color cardColor,
     Color textColor,
     Color subtitleColor,
   ) {
+    final selectedWorker = _workersToRate[_selectedWorkerIndex];
+    final average = selectedWorker.average;
+
     return ListView(
       children: [
         Text(
-          'Califica la calidad del servicio brindado',
+          'Selecciona un trabajador para evaluar',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
             color: textColor,
           ),
         ),
-        const SizedBox(height: 16),
-        _buildRatingTile(
-          'Carlos Mendoza',
-          'Red doméstica',
-          5,
-          cardColor,
-          textColor,
-          subtitleColor,
+        const SizedBox(height: 4),
+        Text(
+          'Toca las estrellas en cada criterio para generar su calificación',
+          style: TextStyle(fontSize: 13, color: subtitleColor),
         ),
-        _buildRatingTile(
-          'Jorge Luis',
-          'Tubería de agua',
-          4,
-          cardColor,
-          textColor,
-          subtitleColor,
+        const SizedBox(height: 14),
+
+        // Selector de trabajadores
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(_workersToRate.length, (index) {
+              final worker = _workersToRate[index];
+              final isSelected = index == _selectedWorkerIndex;
+              return Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: ChoiceChip(
+                  selected: isSelected,
+                  selectedColor: primaryBlue,
+                  backgroundColor: cardColor,
+                  labelStyle: TextStyle(
+                    color: isSelected ? Colors.white : textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  side: BorderSide(
+                    color: isSelected
+                        ? primaryBlue
+                        : primaryBlue.withValues(alpha: 0.25),
+                  ),
+                  avatar: Icon(
+                    Icons.person_rounded,
+                    size: 18,
+                    color: isSelected ? Colors.white : primaryBlue,
+                  ),
+                  label: Text(worker.name),
+                  onSelected: (_) {
+                    setState(() {
+                      _selectedWorkerIndex = index;
+                    });
+                  },
+                ),
+              );
+            }),
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        // Tarjeta resumen del trabajador seleccionado y promedio actual
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: primaryBlue.withValues(alpha: 0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: primaryBlue.withValues(alpha: 0.14),
+                child: Text(
+                  selectedWorker.name[0],
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: primaryBlue,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      selectedWorker.name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      selectedWorker.service,
+                      style: TextStyle(fontSize: 13, color: subtitleColor),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.star_rounded,
+                      color: Colors.amber,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      average > 0 ? average.toStringAsFixed(1) : '0.0',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: textColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        // Criterios evaluables con estrellas seleccionables
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: primaryBlue.withValues(alpha: 0.15)),
+          ),
+          child: Column(
+            children: [
+              _buildInteractiveStarRow(
+                label: 'Puntualidad',
+                icon: Icons.schedule_rounded,
+                currentRating: selectedWorker.puntualidad,
+                textColor: textColor,
+                subtitleColor: subtitleColor,
+                onRatingSelected: (val) {
+                  setState(() => selectedWorker.puntualidad = val);
+                },
+              ),
+              const Divider(height: 24),
+              _buildInteractiveStarRow(
+                label: 'Calidad',
+                icon: Icons.verified_rounded,
+                currentRating: selectedWorker.calidad,
+                textColor: textColor,
+                subtitleColor: subtitleColor,
+                onRatingSelected: (val) {
+                  setState(() => selectedWorker.calidad = val);
+                },
+              ),
+              const Divider(height: 24),
+              _buildInteractiveStarRow(
+                label: 'Atención',
+                icon: Icons.support_agent_rounded,
+                currentRating: selectedWorker.atencion,
+                textColor: textColor,
+                subtitleColor: subtitleColor,
+                onRatingSelected: (val) {
+                  setState(() => selectedWorker.atencion = val);
+                },
+              ),
+              const Divider(height: 24),
+              _buildInteractiveStarRow(
+                label: 'Tiempo de entrega',
+                icon: Icons.timer_rounded,
+                currentRating: selectedWorker.tiempoEntrega,
+                textColor: textColor,
+                subtitleColor: subtitleColor,
+                onRatingSelected: (val) {
+                  setState(() => selectedWorker.tiempoEntrega = val);
+                },
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        // Comentario opcional
+        TextField(
+          controller: _comentarioCalificacionController,
+          maxLines: 2,
+          style: TextStyle(color: textColor),
+          decoration: InputDecoration(
+            labelText: 'Comentario adicional (opcional)',
+            labelStyle: TextStyle(color: subtitleColor),
+            prefixIcon: Icon(Icons.comment_outlined, color: primaryBlue),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: primaryBlue.withValues(alpha: 0.25)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: primaryBlue, width: 2),
+            ),
+            filled: true,
+            fillColor: cardColor,
+          ),
+        ),
+
+        const SizedBox(height: 22),
+
+        // Botón para enviar calificación y disparar notificación push real
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryBlue,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: const Icon(Icons.send_rounded),
+          label: const Text(
+            'Enviar Calificación',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          onPressed: () {
+            if (selectedWorker.puntualidad == 0 ||
+                selectedWorker.calidad == 0 ||
+                selectedWorker.atencion == 0 ||
+                selectedWorker.tiempoEntrega == 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Por favor evalúa los 4 criterios con al menos 1 estrella.',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+              return;
+            }
+
+            final finalScore = selectedWorker.average.toStringAsFixed(1);
+            _comentarioCalificacionController.clear();
+
+            PushNotificationService.showNotification(
+              title: 'Servicio calificado',
+              body:
+                  'Calificaste a ${selectedWorker.name} con $finalScore ★ en ${selectedWorker.service}.',
+            );
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '¡Servicio de ${selectedWorker.name} calificado ($finalScore ★)!',
+                ),
+                backgroundColor: Colors.green,
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInteractiveStarRow({
+    required String label,
+    required IconData icon,
+    required int currentRating,
+    required Color textColor,
+    required Color subtitleColor,
+    required ValueChanged<int> onRatingSelected,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: subtitleColor),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(5, (index) {
+            final starValue = index + 1;
+            final isFilled = starValue <= currentRating;
+            return InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => onRatingSelected(starValue),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Icon(
+                  isFilled ? Icons.star_rounded : Icons.star_border_rounded,
+                  color: Colors.amber,
+                  size: 28,
+                ),
+              ),
+            );
+          }),
         ),
       ],
     );
@@ -871,56 +1210,33 @@ class _ContratanteScreenState extends State<ContratanteScreen> {
       ),
     );
   }
+}
 
-  Widget _buildRatingTile(
-    String worker,
-    String service,
-    int stars,
-    Color cardColor,
-    Color textColor,
-    Color subtitleColor,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                worker,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: textColor,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Servicio: $service',
-                style: TextStyle(fontSize: 12, color: subtitleColor),
-              ),
-            ],
-          ),
-          Row(
-            children: List.generate(
-              5,
-              (index) => Icon(
-                index < stars ? Icons.star_rounded : Icons.star_border_rounded,
-                color: Colors.amber,
-                size: 20,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+class _WorkerRatingItem {
+  _WorkerRatingItem({
+    required this.id,
+    required this.name,
+    required this.service,
+    required this.puntualidad,
+    required this.calidad,
+    required this.atencion,
+    required this.tiempoEntrega,
+  });
+
+  final String id;
+  final String name;
+  final String service;
+  int puntualidad;
+  int calidad;
+  int atencion;
+  int tiempoEntrega;
+
+  double get average {
+    final values = [puntualidad, calidad, atencion, tiempoEntrega];
+    final ratedCount = values.where((v) => v > 0).length;
+    if (ratedCount == 0) return 0;
+    final sum = values.reduce((a, b) => a + b);
+    return sum / 4.0;
   }
 }
 
