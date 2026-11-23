@@ -33,6 +33,37 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
   bool _hasCenteredOnLocation = false;
   StreamSubscription<Position>? _positionSubscription;
 
+  final Map<String, String> _workerProfile = const {
+    'name': 'Emanuel García',
+    'role': 'Trabajador · Servicios y soporte',
+    'email': 'trabajador@teayudo.com',
+    'phone': '+52 246 987 6543',
+    'city': 'Tlaxcala, México',
+    'completedJobs': '18',
+  };
+
+  final Map<String, double> _workerRatingsBreakdown = const {
+    'Puntualidad': 4.9,
+    'Calidad': 4.8,
+    'Atención': 5.0,
+    'Tiempo de entrega': 4.7,
+  };
+
+  final List<Map<String, String>> _clientReviews = const [
+    {
+      'client': 'Carlos Mendoza',
+      'service': 'Instalación de red doméstica',
+      'rating': '5.0',
+      'comment': 'Llegó a tiempo, dejó todo funcionando y con muy buena actitud.',
+    },
+    {
+      'client': 'Ana Sofía Ruiz',
+      'service': 'Soporte técnico',
+      'rating': '4.8',
+      'comment': 'Resolvió el problema rápido y explicó claramente lo que hizo.',
+    },
+  ];
+
   final List<String> _categories = [
     "Todos",
     "Ayudante general",
@@ -43,6 +74,12 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
     "Limpieza",
     "Ayuda rápida",
   ];
+
+  double get _overallWorkerRating {
+    if (_workerRatingsBreakdown.isEmpty) return 0;
+    final total = _workerRatingsBreakdown.values.reduce((a, b) => a + b);
+    return total / _workerRatingsBreakdown.length;
+  }
 
   List<PublicJobData> get _nearbyPublicJobs => publicJobs
       .where((job) => _isWithinSearchRadius(job.latitude, job.longitude))
@@ -325,6 +362,321 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
     );
   }
 
+  void _showWorkerProfileSheet(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = isDarkMode ? const Color(0xFF12202E) : Colors.white;
+    final cardBg = isDarkMode
+        ? Colors.white.withValues(alpha: 0.06)
+        : Colors.grey.shade100;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final subtitleColor = isDarkMode ? Colors.grey[400]! : Colors.grey[600]!;
+    const accentBlue = Color(0xFF1976D2);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        height: MediaQuery.of(sheetContext).size.height * 0.78,
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+        child: ListView(
+          children: [
+            Center(
+              child: Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: isDarkMode ? Colors.white24 : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: accentBlue.withValues(alpha: 0.15),
+                    child: const Icon(
+                      Icons.engineering_rounded,
+                      size: 32,
+                      color: accentBlue,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _workerProfile['name']!,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _workerProfile['role']!,
+                          style: TextStyle(fontSize: 13, color: subtitleColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Colors.amber,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _overallWorkerRating.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Datos personales',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  _buildProfileInfoRow(
+                    Icons.email_outlined,
+                    'Correo',
+                    _workerProfile['email']!,
+                    textColor,
+                    subtitleColor,
+                  ),
+                  const Divider(height: 18),
+                  _buildProfileInfoRow(
+                    Icons.phone_outlined,
+                    'Teléfono',
+                    _workerProfile['phone']!,
+                    textColor,
+                    subtitleColor,
+                  ),
+                  const Divider(height: 18),
+                  _buildProfileInfoRow(
+                    Icons.location_on_outlined,
+                    'Ubicación',
+                    _workerProfile['city']!,
+                    textColor,
+                    subtitleColor,
+                  ),
+                  const Divider(height: 18),
+                  _buildProfileInfoRow(
+                    Icons.work_history_outlined,
+                    'Trabajos completados',
+                    '${_workerProfile['completedJobs']} servicios',
+                    textColor,
+                    subtitleColor,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Calificación de contratantes',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: _workerRatingsBreakdown.entries.map((entry) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            entry.key,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: textColor,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: Colors.amber,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          entry.value.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Reseñas recientes',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 10),
+            for (final review in _clientReviews)
+              Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          review['client']!,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: textColor,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Colors.amber,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              review['rating']!,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: textColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      review['service']!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: accentBlue,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      review['comment']!,
+                      style: TextStyle(fontSize: 13, color: subtitleColor),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileInfoRow(
+    IconData icon,
+    String label,
+    String value,
+    Color textColor,
+    Color subtitleColor,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: const Color(0xFF1976D2)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 12, color: subtitleColor)),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Future<List<LatLng>> _fetchRoadRoute(
     LatLng origin,
     LatLng destination,
@@ -406,7 +758,6 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
     final theme = Theme.of(context);
     final storedAcceptedJob = _findAcceptedJob();
     final isDarkMode = theme.brightness == Brightness.dark;
-    // Definición de colores según el documento (Azules base, Verde para éxito/botones, etc.)[cite: 2]
     final primaryColor = isDarkMode
         ? const Color(0xFF12202E)
         : const Color(0xFF1976D2);
@@ -420,59 +771,114 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // 1. ENCABEZADO Y CONTROLES SUPERIORES
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               color: cardColor,
               child: Column(
                 children: [
-                  // Barra de Ubicación Actual editable[cite: 2]
-                  InkWell(
-                    onTap: () {
-                      // TODO: Abrir selector o edición de ubicación
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDarkMode
-                            ? Colors.white10
-                            : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.my_location,
-                            color: Colors.blue,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _locationMessage,
-                              style: TextStyle(
-                                color: textColor,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {},
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? Colors.white10
+                                  : Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.my_location,
+                                  color: Colors.blue,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _locationMessage,
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 14,
+                                  color: Colors.grey,
+                                ),
+                              ],
                             ),
                           ),
-                          const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => _showWorkerProfileSheet(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFF1976D2,
+                            ).withValues(alpha: isDarkMode ? 0.25 : 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF1976D2,
+                              ).withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.person_rounded,
+                                size: 18,
+                                color: Color(0xFF1976D2),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Mi perfil',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.star_rounded,
+                                size: 15,
+                                color: Colors.amber,
+                              ),
+                              Text(
+                                _overallWorkerRating.toStringAsFixed(1),
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
-
-                  // Barra de búsqueda libre + Botón historial/lista[cite: 2]
                   Row(
                     children: [
                       Expanded(
@@ -514,8 +920,6 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                 ],
               ),
             ),
-
-            // 2. BARRA HORIZONTAL DE CATEGORÍAS (Estilo Delivery)[cite: 2]
             Container(
               color: cardColor,
               height: 50,
@@ -548,8 +952,6 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                 },
               ),
             ),
-
-            // 3. MAPA VISUAL INTERACTIVO CON MARCADORES
             Expanded(
               child: Stack(
                 children: [
@@ -618,7 +1020,6 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                         ),
                       ],
                     ),
-
                   if (_isCalculatingRoute)
                     Positioned(
                       top: 16,
@@ -646,8 +1047,6 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                         ),
                       ),
                     ),
-
-                  // Botón flotante para ver lista de resultados rápidos inferiores[cite: 2]
                   Positioned(
                     bottom: 12,
                     left: 20,
