@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:latlong2/latlong.dart';
 
+const double appCommissionRate = 0.10;
+
 class PublicJobData {
   final String serviceType;
   final String description;

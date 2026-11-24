@@ -63,7 +63,6 @@ void main() {
       expect(job.trabajoAceptado, 3);
       expect(find.text('Confirmar pago'), findsOneWidget);
       expect(find.text('Mercado Pago'), findsOneWidget);
-      expect(find.text('\$35.00 MXN'), findsOneWidget);
       expect(find.text('\$385.00 MXN'), findsOneWidget);
 
       final confirmPayment = find.text('Confirmar pago simulado');

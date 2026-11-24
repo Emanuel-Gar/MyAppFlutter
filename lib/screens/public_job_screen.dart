@@ -227,6 +227,59 @@ class _PublicJobScreenState extends State<PublicJobScreen> {
                       return null;
                     },
                   ),
+                  const SizedBox(height: 8),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _paymentController,
+                    builder: (context, value, child) {
+                      final offeredAmount = double.tryParse(value.text.trim());
+                      final hasValidAmount =
+                          offeredAmount != null &&
+                          offeredAmount.isFinite &&
+                          offeredAmount > 0;
+                      final commission = hasValidAmount
+                          ? offeredAmount * appCommissionRate
+                          : null;
+                      final total = hasValidAmount
+                          ? offeredAmount + commission!
+                          : null;
+
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: primaryBlue.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Comisión de la app '
+                              '(${(appCommissionRate * 100).toStringAsFixed(0)}%)',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Monto de comisión: '
+                              '${commission == null ? '—' : '\$${commission.toStringAsFixed(2)} MXN'}',
+                            ),
+                            Text(
+                              'Total a pagar: '
+                              '${total == null ? '—' : '\$${total.toStringAsFixed(2)} MXN'}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'El trabajador verá únicamente el ofrecimiento económico.',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _estimatedDurationController,

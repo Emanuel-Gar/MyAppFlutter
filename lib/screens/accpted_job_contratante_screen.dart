@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../services/publicjob_service.dart';
+import '../services/push_notification_service.dart';
 
 class AcceptedJobContratanteScreen extends StatefulWidget {
   const AcceptedJobContratanteScreen({super.key, required this.job});
@@ -31,7 +33,7 @@ class _AcceptedJobContratanteScreenState
       return;
     }
 
-    final appCommission = serviceAmount * 0.10;
+    final appCommission = serviceAmount * appCommissionRate;
     final totalAmount = serviceAmount + appCommission;
     setState(() => widget.job.trabajoAceptado = 3);
     var paymentConfirmed = false;
@@ -61,16 +63,6 @@ class _AcceptedJobContratanteScreenState
                       'Selecciona Mercado Pago para confirmar el pago. '
                       'Esta simulación no realizará ningún cobro real.',
                     ),
-                    const SizedBox(height: 16),
-                    _PaymentAmountRow(
-                      label: 'Pago del trabajo',
-                      amount: serviceAmount,
-                    ),
-                    const SizedBox(height: 8),
-                    _PaymentAmountRow(
-                      label: 'Comisión de la app (10%)',
-                      amount: appCommission,
-                    ),
                     const Divider(height: 24),
                     _PaymentAmountRow(
                       label: 'Total a pagar',
@@ -92,7 +84,7 @@ class _AcceptedJobContratanteScreenState
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () {
+                        onPressed: () async {
                           widget.job
                             ..paymentMethod = 'Mercado Pago'
                             ..paymentConfirmed = true
@@ -100,6 +92,39 @@ class _AcceptedJobContratanteScreenState
                           publicJobs.remove(widget.job);
                           setState(() {});
                           setModalState(() => paymentConfirmed = true);
+                          try {
+                            await PushNotificationService.showPaymentNotifications(
+                              serviceType: widget.job.serviceType,
+                              workerAmount: serviceAmount,
+                              totalAmount: totalAmount,
+                            );
+                          } on PlatformException catch (error) {
+                            debugPrint(
+                              'Error mostrando notificaciones de pago: $error',
+                            );
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'El pago se confirmó, pero no se pudieron mostrar las notificaciones.',
+                                  ),
+                                ),
+                              );
+                            }
+                          } on MissingPluginException catch (error) {
+                            debugPrint(
+                              'Plugin de notificaciones no disponible: $error',
+                            );
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'El pago se confirmó, pero las notificaciones no están disponibles en este dispositivo.',
+                                  ),
+                                ),
+                              );
+                            }
+                          }
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (modalContext.mounted) {
                               Navigator.of(modalContext).pop(true);
